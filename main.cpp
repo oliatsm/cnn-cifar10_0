@@ -7,7 +7,7 @@
 
 using namespace cv;
 
-#define N 1 //Number of Input Data
+#define N 10//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072
 
@@ -16,12 +16,13 @@ using namespace cv;
 
 
 // Place where test data is stored on instructional machines.
-const char *DATA_FOLDER = "/home/olia/Documents/Programming/cifar-10-batches-bin";
+// const char *DATA_FOLDER = "/home/olia/Documents/Programming/cifar-10-batches-bin";
+const char *DATA_FOLDER = "../../cifar-10-batches-bin";
 
 
 // Load an entire batch of images from the cifar10 data set (which is divided
 // into 5 batches with 10,000 images each).
-void load_data(int ** image, int * label) {
+void load_data(int **image, int * label) {
     
     int batch = 1;
     size_t LINE_SIZE = 3073;
@@ -42,7 +43,7 @@ void load_data(int ** image, int * label) {
         assert(fread(data, 1, LINE_SIZE, fbin) == LINE_SIZE);
 
         label[i] = data[0];
-        for (int j = 0; j < (IMAGE_PIXELS); j++) {
+        for (int j = 0; j < IMAGE_PIXELS; j++) {
             image[i][j] = ((int)data[j+1]);///255.0-0.5;
                 }
             
@@ -82,6 +83,7 @@ void img2txt(int *image) {
 
 
 int main(){
+    const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
 
     int **input=(int **)malloc(sizeof(int*)*N);
     for (int i=0;i<N;i++){
@@ -89,10 +91,11 @@ int main(){
     }
 
     int labels[NUM_CLASSES];
+    
 
     load_data(input,labels);
     
-    printf("LABEL = %d\n",labels[0]);
+    
     // for(int i=0;i<IMAGE_PIXELS;i++)
     //     printf("%d, ", input[0][i]);
     // printf("/n");
@@ -106,12 +109,16 @@ int main(){
     // img2txt(input[0]);
 
     Mat image(32, 32, CV_8UC3);
+    for(int n=0;n<N;n++){
+        printf("LABEL = %d,%s\n",labels[n],label_names[labels[n]]);
     for (int i = 0; i < 32 * 32; ++i) {
-        image.at<Vec3b>(i) = Vec3b(input[0][i], input[0][i + 1024], input[0][i + 2048]);
+        image.at<Vec3b>(i) = Vec3b((char)input[n][i], (char)input[n][i + 1024],(char) input[n][i + 2048]);
     }
     imshow("RGB Image", image);
-    waitKey(0);
-
+    if (waitKey(0) == 27) { // Press 'Esc' to exit
+            break;
+        }
+}
     free(input);
     printf("END!\n");
 
