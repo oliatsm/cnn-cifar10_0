@@ -95,19 +95,7 @@ int main(){
 
     load_data(input,labels);
     
-    
-    // for(int i=0;i<IMAGE_PIXELS;i++)
-    //     printf("%d, ", input[0][i]);
-    // printf("/n");
-
-    // Create an OpenCV Mat object from the array
-    // cv::Mat image(32, 32, CV_32SC3, input[0]);
-    // image.convertTo(image, CV_8UC3);
-    // // Display the image using OpenCV
-    // cv::imshow("RGB Image", image);
-    // cv::waitKey(0); // Wait for a key press
-    // img2txt(input[0]);
-
+    //Print image with OpenCV
     Mat image(32, 32, CV_8UC3);
     for(int n=0;n<N;n++){
         printf("LABEL = %d,%s\n",labels[n],label_names[labels[n]]);
@@ -118,10 +106,12 @@ int main(){
     if (waitKey(0) == 27) { // Press 'Esc' to exit
             break;
         }
-}
-    free(input);
-    printf("END!\n");
+    }
+    //^OpenCV
 
+
+    // free(input);
+    printf("END!\n");
 
     return 0;
 }
