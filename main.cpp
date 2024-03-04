@@ -5,6 +5,8 @@
 
 #include <opencv2/opencv.hpp>
 
+using namespace cv;
+
 #define N 1 //Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072
@@ -51,6 +53,34 @@ void load_data(int ** image, int * label) {
 
 }
 
+void img2txt(int *image) {
+    FILE *file = fopen("image_N_3.txt", "w");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    for (int n = 0; n < N; ++n) {
+        
+        for (int k = 0; k < 3; ++k) {
+            for (int j = 0; j < 32; ++j) {
+                for (int i = 0; i < 32; ++i) {
+                    fprintf(file, "%d ", image[((j*32)+i)+1024*k]);
+                }
+                fprintf(file, "\n");
+            }
+        }
+        // for (int i = 0; i < 3072; ++i) {
+        //             fprintf(file, "%d ", image[i]);
+        //         }
+        fprintf(file, "\n\n");
+    }
+
+    fclose(file);
+}
+
+
 int main(){
 
     int **input=(int **)malloc(sizeof(int*)*N);
@@ -68,13 +98,22 @@ int main(){
     // printf("/n");
 
     // Create an OpenCV Mat object from the array
-    cv::Mat image(32, 32, CV_8UC3, input[0]);
+    // cv::Mat image(32, 32, CV_32SC3, input[0]);
+    // image.convertTo(image, CV_8UC3);
+    // // Display the image using OpenCV
+    // cv::imshow("RGB Image", image);
+    // cv::waitKey(0); // Wait for a key press
+    // img2txt(input[0]);
 
-    // Display the image using OpenCV
-    cv::imshow("RGB Image", image);
-    cv::waitKey(0); // Wait for a key press
+    Mat image(32, 32, CV_8UC3);
+    for (int i = 0; i < 32 * 32; ++i) {
+        image.at<Vec3b>(i) = Vec3b(input[0][i], input[0][i + 1024], input[0][i + 2048]);
+    }
+    imshow("RGB Image", image);
+    waitKey(0);
 
     free(input);
+    printf("END!\n");
 
 
     return 0;
