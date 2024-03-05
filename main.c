@@ -25,7 +25,7 @@ const char *DATA_FOLDER = "../cifar-10-batches-bin";
 void load_data(int **image, int * label) {
     
     int batch = 1;
-    size_t LINE_SIZE = 3073;
+    int LINE_SIZE = 3073;
 
     //TODO: Elegxos gia poio batch kano load
 
@@ -43,7 +43,7 @@ void load_data(int **image, int * label) {
         assert(fread(data, 1, LINE_SIZE, fbin) == LINE_SIZE);
 
         label[i] = data[0];
-        size_t data_i=1;
+        int data_i=1;
         for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
             image[i][j] = (int)data[data_i++];///255.0-0.5; 
             // printf("(%d,%d) ",j,j+1);
@@ -94,7 +94,7 @@ int main(){
         assert(input[i]!=NULL);
     }
 
-    int labels[NUM_CLASSES];
+    int labels[N];
     
 
     load_data(input,labels);
