@@ -7,7 +7,7 @@
 
 // using namespace cv;
 
-#define N 10000//Number of Input Data
+#define N 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072
 
