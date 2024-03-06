@@ -36,34 +36,24 @@ int load_data(int **image, int * label) {
     sprintf(file_name, "%s/data_batch_%d.bin", DATA_FOLDER, batch);
 
     FILE *fbin = fopen(file_name, "rb");
-    assert(fbin != NULL);
+    // assert(fbin != NULL);
+    if(fbin==NULL){
+        printf("File not found. Error reading .bin files.\n");
+        exit(EXIT_FAILURE);
+    }
 
     for (int i = 0; i < N; i++) {
 
         uint8_t data[LINE_SIZE];
         size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
-        bytesRead+=3;
-        if (bytesRead != LINE_SIZE) { 
-            if(feof(fbin)){
-                printf("Reach end of file. Exiting loop.\n");
-                break;
-            } else {
-                // printf("Error Reading File\n");
-                printf("Error reading from file\n");
-                exit(EXIT_FAILURE);
-                // return;
-            }
-         }
-        // assert(fread(data, 1, LINE_SIZE, fbin) == LINE_SIZE);
+        assert(bytesRead == LINE_SIZE);
 
         label[i] = data[0];
         size_t data_i=1;
         for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
             image[i][j] = (int)data[data_i++];///255.0-0.5; 
-            // printf("(%d,%d) ",j,j+1);
-                }//printf("\n");
-            
-            
+        }
+
     }
 
     fclose(fbin);
