@@ -22,7 +22,7 @@ const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 // Load an entire batch of images from the cifar10 data set (which is divided
 // into 5 batches with 10,000 images each).
-void load_data(int **image, int * label) {
+int load_data(int **image, int * label) {
     
     int batch = 1;
     size_t LINE_SIZE = 3073;
@@ -40,7 +40,20 @@ void load_data(int **image, int * label) {
     for (int i = 0; i < N; i++) {
 
         uint8_t data[LINE_SIZE];
-        assert(fread(data, 1, LINE_SIZE, fbin) == LINE_SIZE);
+        size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
+        bytesRead+=3;
+        if (bytesRead != LINE_SIZE) { 
+            if(feof(fbin)){
+                printf("Reach end of file. Exiting loop.\n");
+                break;
+            } else {
+                // printf("Error Reading File\n");
+                printf("Error reading from file\n");
+                exit(EXIT_FAILURE);
+                // return;
+            }
+         }
+        // assert(fread(data, 1, LINE_SIZE, fbin) == LINE_SIZE);
 
         label[i] = data[0];
         size_t data_i=1;
@@ -53,6 +66,7 @@ void load_data(int **image, int * label) {
     }
 
     fclose(fbin);
+    return 0;
 
 }
 
