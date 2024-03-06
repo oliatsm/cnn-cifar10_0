@@ -24,6 +24,7 @@ const char *DATA_FOLDER = "../cifar-10-batches-bin";
 // into 5 batches with 10,000 images each).
 void load_data(int **image, int * label) {
     
+    
     int batch = 1;
     size_t LINE_SIZE = 3073;
 
