@@ -7,7 +7,7 @@
 
 // using namespace cv;
 
-#define N 50000//Number of Input Data
+#define NUM_IMAGES 120//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072
 
@@ -22,7 +22,7 @@ const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 // Load an entire batch of images from the cifar10 data set (which is divided
 // into 5 batches with 10,000 images each).
-int load_data(int **image, int * label) {
+int load_data(int **image, int * label, int N) {
     
     
     int batch = 1;
@@ -61,7 +61,7 @@ int load_data(int **image, int * label) {
 
 }
 
-void img2txt(int *image) {
+void img2txt(int *image, int N) {
     FILE *file = fopen("image_N_3.txt", "w");
 
     if (file == NULL) {
@@ -90,7 +90,13 @@ void img2txt(int *image) {
 
 
 int main(){
-    const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
+    // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
+    const int N = NUM_IMAGES;
+
+    if (N>50000 || N<=0){
+        printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
+        exit(EXIT_SUCCESS);
+    }
 
     int **input=(int **)malloc(sizeof(int*)*N);
     assert(input!=NULL);
@@ -102,7 +108,7 @@ int main(){
     int labels[N];
     
 
-    load_data(input,labels);
+    load_data(input,labels,N);
     
     //Print image with OpenCV
     // Mat image(32, 32, CV_8UC3);
