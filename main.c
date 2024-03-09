@@ -23,7 +23,8 @@ const char *DATA_FOLDER = "/home/olia/Documents/Programming/cifar-10-batches-bin
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
 int load_data(int **image, int * label, int N) {
     
-    int batches = (N/MAX_BATCH_DATA)+1;
+    //Find how many batches I need and how many extra samples
+    int batches = (N/MAX_BATCH_DATA)+1; 
     int samples = N%MAX_BATCH_DATA;
     int n = 0;  //Image index
 
@@ -31,6 +32,7 @@ int load_data(int **image, int * label, int N) {
     size_t LINE_SIZE = 3073;
     char file_name[1024];
     
+    //Loading the whole batches. If we need less than 10.000 images, the condition (b<batches) ends the loop.
     for (int b=1;b<batches;b++){
         printf("Loading input batch %d...\n", b);
 
@@ -55,13 +57,12 @@ int load_data(int **image, int * label, int N) {
                  
             }
             n++;
-        
         }
-
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
     }
 
+    // Loading less than 10.000 images from a batch
     if(samples!=0){
         printf("Loading input batch %d...\n", batches);
 
@@ -90,9 +91,7 @@ int load_data(int **image, int * label, int N) {
 
             }
             fclose(fbin);
-    }    assert(n==N);
-
-    
+    }assert(n==N);
 
     return 0;
 
@@ -167,7 +166,7 @@ int main(){
     //     }printf("\n");
     // }
 
-    for (int i=0;i<N;i++){
+    for (int i=(N-1);i>=0;i--){
         free(input[i]);
     }
 
