@@ -2,6 +2,9 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
+# CC = nvc
+# CFLAGS = -Wall -Wextra -std=c11
+
 SRC = main.c
 EXECUTABLE = cnn-cifar10
 

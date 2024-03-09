@@ -54,7 +54,6 @@ int load_data(int **image, int * label, int N) {
             size_t data_i=1;
             for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
                 image[n][j] = (int)data[data_i++];///255.0-0.5;
-                 
             }
             n++;
         }
@@ -85,10 +84,8 @@ int load_data(int **image, int * label, int N) {
                 size_t data_i=1;
                 for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
                     image[n][j] = (int)data[data_i++];///255.0-0.5;
-                    
                 }
                 n++;
-
             }
             fclose(fbin);
     }assert(n==N);
@@ -127,7 +124,7 @@ void img2txt(int *image, int N) {
 
 int main(){
     const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    const int N = NUM_IMAGES;
+    int N = NUM_IMAGES;
 
     // if (N>50000 || N<=0){
     //     printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
@@ -143,7 +140,6 @@ int main(){
 
     int labels[N];
     
-
     load_data(input,labels,N);
     
     //Print image with OpenCV
