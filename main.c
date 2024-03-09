@@ -2,10 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-
-// #include <opencv2/opencv.hpp>
-
-// using namespace cv;
+#include <string.h>
 
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
@@ -54,9 +51,8 @@ int load_data(int **image, int * label, int N) {
             size_t data_i=1;
             for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
                 image[n][j] = (int)data[data_i++];///255.0-0.5;
-                 
             }
-            n++;
+            n++;printf("%d \n",n);
         }
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
@@ -85,10 +81,8 @@ int load_data(int **image, int * label, int N) {
                 size_t data_i=1;
                 for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
                     image[n][j] = (int)data[data_i++];///255.0-0.5;
-                    
                 }
                 n++;
-
             }
             fclose(fbin);
     }assert(n==N);
@@ -126,8 +120,8 @@ void img2txt(int *image, int N) {
 
 
 int main(){
-    const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    const int N = NUM_IMAGES;
+    // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
+    int N = NUM_IMAGES;
 
     // if (N>50000 || N<=0){
     //     printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
@@ -143,28 +137,7 @@ int main(){
 
     int labels[N];
     
-
     load_data(input,labels,N);
-    
-    //Print image with OpenCV
-    // Mat image(32, 32, CV_8UC3);
-    // for(int n=0;n<N;n+=2000){
-    //     printf("%d:(%d)%s\n",n,labels[n],label_names[labels[n]]);
-    // for (int i = 0; i < 32 * 32; ++i) {
-    //     image.at<Vec3b>(i) = Vec3b((char)input[n][i], (char)input[n][i + 1024],(char) input[n][i + 2048]);
-    // }
-    // imshow("RGB Image", image);
-    // if (waitKey(0) == 27) { // Press 'Esc' to exit
-    //         break;
-    //     }
-    // }
-    //^OpenCV
-
-    // for(int i=0;i<32;i++){
-    //     for (int j=0;j<32;j++){
-    //         printf("%d ",input[0][32*i+j]);
-    //     }printf("\n");
-    // }
 
     for (int i=(N-1);i>=0;i--){
         free(input[i]);

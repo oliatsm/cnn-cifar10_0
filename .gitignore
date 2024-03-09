@@ -1,3 +1,5 @@
 a.out
 build/
 cnn-cifar10
+cifar
+nv_cifar
