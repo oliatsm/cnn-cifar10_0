@@ -7,56 +7,64 @@
 
 // using namespace cv;
 
-#define NUM_IMAGES 120//Number of Input Data
+#define NUM_IMAGES 20000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
-#define IMAGE_PIXELS 3072
+#define IMAGE_PIXELS 3072 //
 
 #define MAX_TRAINING_DATA 50000
 #define MAX_BATCH_DATA 10000
 
 
-// Place where test data is stored on instructional machines.
+// Foler for .bin files of cifar dataset on my system.
 // const char *DATA_FOLDER = "/home/olia/Documents/Programming/cifar-10-batches-bin";
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 
-// Load an entire batch of images from the cifar10 data set (which is divided
-// into 5 batches with 10,000 images each).
+// Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
 int load_data(int **image, int * label, int N) {
     
-    
+    int batches = (N/MAX_BATCH_DATA)+1;
+    int samples = N%MAX_BATCH_DATA;
+    int n = 0;  //Image index
+
+    printf("Batches: %d, Samples: %d.\n",batches,samples);
     int batch = 1;
     size_t LINE_SIZE = 3073;
 
-    //TODO: Elegxos gia poio batch kano load
 
-    printf("Loading input batch %d...\n", batch);
+    for (int b=1;b<batches;b++){
+        printf("Loading input batch %d...\n", batch);
 
-    char file_name[1024];
-    sprintf(file_name, "%s/data_batch_%d.bin", DATA_FOLDER, batch);
+        char file_name[1024];
 
-    FILE *fbin = fopen(file_name, "rb");
-    // assert(fbin != NULL);
-    if(fbin==NULL){
-        printf("File not found. Error reading .bin files.\n");
-        exit(EXIT_FAILURE);
-    }
+        sprintf(file_name, "%s/data_batch_%d.bin", DATA_FOLDER, batch);
 
-    for (int i = 0; i < N; i++) {
-
-        uint8_t data[LINE_SIZE];
-        size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
-        assert(bytesRead == LINE_SIZE);
-
-        label[i] = data[0];
-        size_t data_i=1;
-        for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
-            image[i][j] = (int)data[data_i++];///255.0-0.5; 
+        FILE *fbin = fopen(file_name, "rb");
+        // assert(fbin != NULL);
+        if(fbin==NULL){
+            printf("File not found. Error reading .bin files.\n");
+            exit(EXIT_FAILURE);
         }
 
-    }
+        for (int i = 0; i < MAX_BATCH_DATA; i++) {
 
-    fclose(fbin);
+            uint8_t data[LINE_SIZE];
+            size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
+            assert(bytesRead == LINE_SIZE);
+
+            label[i] = data[0];
+            size_t data_i=1;
+            for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
+                image[n][j] = (int)data[data_i++];///255.0-0.5;
+                 
+            }
+            n++;
+        // assert((n%MAX_BATCH_DATA)==0);
+        
+        }
+        printf("n=%d \n",n);
+        fclose(fbin);
+    }
     return 0;
 
 }
@@ -93,10 +101,10 @@ int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     const int N = NUM_IMAGES;
 
-    if (N>50000 || N<=0){
-        printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
-        exit(EXIT_SUCCESS);
-    }
+    // if (N>50000 || N<=0){
+    //     printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
+    //     exit(EXIT_SUCCESS);
+    // }
 
     int **input=(int **)malloc(sizeof(int*)*N);
     assert(input!=NULL);
