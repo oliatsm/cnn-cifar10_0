@@ -137,6 +137,7 @@ int main(){
 
     int labels[N];
     
+    
     load_data(input,labels,N);
 
     for (int i=(N-1);i>=0;i--){
