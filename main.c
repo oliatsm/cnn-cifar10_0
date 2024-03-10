@@ -51,7 +51,7 @@ int load_data(int **image, int * label, int N) {
             for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
                 image[n][j] = (int)data[data_i++];///255.0-0.5;
             }
-            n++;printf("%d \n",n);
+            n++;//printf("%d \n",n);
         }
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
