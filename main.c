@@ -41,9 +41,9 @@ int load_data(int **image, int * label, int N) {
             exit(EXIT_FAILURE);
         }
 
+        uint8_t data[LINE_SIZE];
         for (int i = 0; i < MAX_BATCH_DATA; i++) {
 
-            uint8_t data[LINE_SIZE];
             size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
             assert(bytesRead == LINE_SIZE);
 
@@ -71,9 +71,9 @@ int load_data(int **image, int * label, int N) {
                 exit(EXIT_FAILURE);
             }
 
+            uint8_t data[LINE_SIZE];
             for (int i = 0; i < samples; i++) {
 
-                uint8_t data[LINE_SIZE];
                 size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
                 assert(bytesRead == LINE_SIZE);
 
