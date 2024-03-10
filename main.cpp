@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
+
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 //
@@ -13,7 +17,8 @@
 
 
 // Foler for .bin files of cifar dataset on my system.
-const char *DATA_FOLDER = "../cifar-10-batches-bin";
+const char *DATA_FOLDER = "/home/olia/Documents/Programming/cifar-10-batches-bin";
+// const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
@@ -90,20 +95,20 @@ int load_data(int **image, int * label, int N) {
 
 }
 
-void img2txt(int **image, int *label, int N) {
-    FILE *file = fopen("image_nvc.txt", "w");
+void img2txt(int *image, int N) {
+    FILE *file = fopen("image_N_3.txt", "w");
 
     if (file == NULL) {
         printf("Error opening file!\n");
         return;
     }
 
-    for (int n = 0; n < N; n+=5000) {
-        fprintf(file, "%d: %d \n",n,label[n]);
+    for (int n = 0; n < N; ++n) {
+        
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%d ", image[n][((j*32)+i)+1024*k]);
+                    fprintf(file, "%d ", image[((j*32)+i)+1024*k]);
                 }
                 fprintf(file, "\n");
             }
@@ -135,10 +140,23 @@ int main(){
     }
 
     int labels[N];
-        
+    
+    
     load_data(input,labels,N);
 
-    // img2txt(input,labels,N);
+     //Print image with OpenCV
+    Mat image(32, 32, CV_8UC3);
+    for(int n=0;n<N;n+=2000){
+        printf("%d:(%d)%s\n",n,labels[n],label_names[labels[n]]);
+    for (int i = 0; i < 32 * 32; ++i) {
+        image.at<Vec3b>(i) = Vec3b((char)input[n][i], (char)input[n][i + 1024],(char) input[n][i + 2048]);
+    }
+    imshow("RGB Image", image);
+    if (waitKey(0) == 27) { // Press 'Esc' to exit
+            break;
+        }
+    }
+    //^OpenCV
 
     for (int i=(N-1);i>=0;i--){
         free(input[i]);
