@@ -16,8 +16,7 @@
 
 
 // Foler for .bin files of cifar dataset on my system.
-const char *DATA_FOLDER = "/home/olia/Documents/Programming/cifar-10-batches-bin";
-// const char *DATA_FOLDER = "../cifar-10-batches-bin";
+const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
