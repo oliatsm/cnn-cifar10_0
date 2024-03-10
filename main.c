@@ -91,20 +91,20 @@ int load_data(int **image, int * label, int N) {
 
 }
 
-void img2txt(int *image, int N) {
-    FILE *file = fopen("image_N_3.txt", "w");
+void img2txt(int **image, int *label, int N) {
+    FILE *file = fopen("image_nvc.txt", "w");
 
     if (file == NULL) {
         printf("Error opening file!\n");
         return;
     }
 
-    for (int n = 0; n < N; ++n) {
-        
+    for (int n = 0; n < N; n+=5000) {
+        fprintf(file, "%d: %d \n",n,label[n]);
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%d ", image[((j*32)+i)+1024*k]);
+                    fprintf(file, "%d ", image[n][((j*32)+i)+1024*k]);
                 }
                 fprintf(file, "\n");
             }
@@ -120,7 +120,7 @@ void img2txt(int *image, int N) {
 
 
 int main(){
-    // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
+    const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     int N = NUM_IMAGES;
 
     // if (N>50000 || N<=0){
@@ -136,9 +136,10 @@ int main(){
     }
 
     int labels[N];
-    
-    
+        
     load_data(input,labels,N);
+
+    // img2txt(input,labels,N);
 
     for (int i=(N-1);i>=0;i--){
         free(input[i]);
