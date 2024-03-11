@@ -4,4 +4,4 @@ cnn-cifar10
 cifar
 nv_cifar
 nv_cnn
-nvc -compiler.md
+nvc-compiler.md
