@@ -5,6 +5,4 @@ cifar
 nv_cifar
 nv_cnn
 nvc-compiler.md
-*.txt
 conv
-conv.c
