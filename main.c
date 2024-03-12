@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h> 
 
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
@@ -11,12 +12,16 @@
 #define MAX_TRAINING_DATA 50000
 #define MAX_BATCH_DATA 10000
 
+#define IMAGE_WIDTH 32
+#define IMAGE_HEIGHT 32
+#define IMAGE_CHANEL 3
+
 
 // Foler for .bin files of cifar dataset on my system.
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
-float get_image_pixel(float *image,int width,int height,int channel){
-    return image[((height*32)+width)+1024*channel];
+inline float get_image_pixel(float *image,int width,int height,int channel){
+    return image[((height*IMAGE_HEIGHT)+width)+(IMAGE_WIDTH*IMAGE_HEIGHT)*channel];
 }
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
 int load_data(float **image, int * label, int N) {
@@ -105,7 +110,8 @@ void img2txt(float **image, int *label, int N) {
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%f ", get_image_pixel(image[n],i,j,k));
+                    // fprintf(file, "%f ", get_image_pixel(image[n],i,j,k));
+                    fprintf(file, "%f ", image[((j*IMAGE_HEIGHT)+i)+(IMAGE_WIDTH*IMAGE_HEIGHT)*k]);
                 }
                 fprintf(file, "\n");
             }
@@ -123,6 +129,8 @@ void img2txt(float **image, int *label, int N) {
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     int N = NUM_IMAGES;
+    clock_t t1,t2; 
+ 
 
     // if (N>50000 || N<=0){
     //     printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
@@ -140,7 +148,11 @@ int main(){
         
     load_data(input,labels,N);
 
-    img2txt(input,labels,1);
+    t1 = clock();
+    img2txt(input,labels,N);
+    t2 = clock();
+
+    printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
     for (int i=(N-1);i>=0;i--){
         free(input[i]);
