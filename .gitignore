@@ -6,3 +6,5 @@ nv_cifar
 nv_cnn
 nvc-compiler.md
 conv
+image_gold.txt
+image.txt
