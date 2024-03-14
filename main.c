@@ -91,7 +91,7 @@ int load_data(float **image, int * label, int N) {
 }
 
 void img2txt(float **image, int *label, int N) {
-    FILE *file = fopen("image_nvc.txt", "w");
+    FILE *file = fopen("image.txt", "w");
 
     if (file == NULL) {
         printf("Error opening file!\n");
@@ -103,7 +103,7 @@ void img2txt(float **image, int *label, int N) {
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%f ", image[n][((j*32)+i)+1024*k]);
+                    fprintf(file, "%.0f ", image[n][((j*32)+i)+1024*k]);
                 }
                 fprintf(file, "\n");
             }
