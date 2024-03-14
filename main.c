@@ -17,7 +17,7 @@ const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
-int load_data(int **image, int * label, int N) {
+int load_data(float **image, int * label, int N) {
     
     //Find how many batches I need and how many extra samples
     int batches = (N/MAX_BATCH_DATA)+1; 
@@ -49,7 +49,7 @@ int load_data(int **image, int * label, int N) {
             label[n] = data[0];
             size_t data_i=1;
             for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
-                image[n][j] = (int)data[data_i++];///255.0-0.5;
+                image[n][j] = (float)data[data_i++]/255.0-0.5;
             }
             n++;//printf("%d \n",n);
         }
@@ -79,7 +79,7 @@ int load_data(int **image, int * label, int N) {
                 label[n] = data[0];
                 size_t data_i=1;
                 for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
-                    image[n][j] = (int)data[data_i++];///255.0-0.5;
+                    image[n][j] = (float)data[data_i++]/255.0-0.5;
                 }
                 n++;
             }
@@ -90,7 +90,7 @@ int load_data(int **image, int * label, int N) {
 
 }
 
-void img2txt(int **image, int *label, int N) {
+void img2txt(float **image, int *label, int N) {
     FILE *file = fopen("image_nvc.txt", "w");
 
     if (file == NULL) {
@@ -103,7 +103,7 @@ void img2txt(int **image, int *label, int N) {
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%d ", image[n][((j*32)+i)+1024*k]);
+                    fprintf(file, "%f ", image[n][((j*32)+i)+1024*k]);
                 }
                 fprintf(file, "\n");
             }
@@ -127,10 +127,10 @@ int main(){
     //     exit(EXIT_SUCCESS);
     // }
 
-    int **input=(int **)malloc(sizeof(int*)*N);
+    float **input=(float **)malloc(sizeof(float*)*N);
     assert(input!=NULL);
     for (int i=0;i<N;i++){
-        input[i] = (int *)malloc(sizeof(int)*IMAGE_PIXELS);
+        input[i] = (float *)malloc(sizeof(float)*IMAGE_PIXELS);
         assert(input[i]!=NULL);
     }
 
