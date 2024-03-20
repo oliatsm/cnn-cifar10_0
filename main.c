@@ -6,13 +6,13 @@
 
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
-#define IMAGE_PIXELS 3072 //
+#define IMAGE_PIXELS 3072 // Number of pixels of each image
 
 #define MAX_TRAINING_DATA 50000
 #define MAX_BATCH_DATA 10000
 
 
-// Foler for .bin files of cifar dataset on my system.
+// Folder for .bin files of cifar dataset on my system.
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 
@@ -25,8 +25,8 @@ int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
     int n = 0;  //Image index
 
     printf("Batches: %d, Samples: %d.\n",batches,samples);
-    size_t LINE_SIZE = 3073;
     char file_name[1024];
+    size_t LINE_SIZE = 3073;
     
     //Loading the whole batches. If we need less than 10.000 images, the condition (b<batches) ends the loop.
     for (int b=1;b<batches;b++){
