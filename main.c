@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define NUM_IMAGES 37987//Number of Input Data
+#define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 //
 
@@ -127,23 +127,14 @@ int main(){
     //     exit(EXIT_SUCCESS);
     // }
 
-    // float **input=(float **)malloc(sizeof(float*)*N);
     float (*input)[IMAGE_PIXELS]=malloc(sizeof(*input)*N);
     assert(input!=NULL);
-    // for (int i=0;i<N;i++){
-    //     input[i] = (float *)malloc(sizeof(float)*IMAGE_PIXELS);
-    //     assert(input[i]!=NULL);
-    // }
 
     int labels[N];
         
     load_data(input,labels,N);
 
     img2txt(input,labels,N);
-
-    // for (int i=(N-1);i>=0;i--){
-    //     free(input[i]);
-    // }
 
     free(input);
     printf("END!\n");
