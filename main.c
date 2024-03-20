@@ -58,7 +58,7 @@ int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
             for (int j = 0; j < IMAGE_PIXELS && data_i<LINE_SIZE; j++) {
                 image[n][j] = (float)data[data_i++]/255.0-0.5;
             }
-            n++;//printf("%d \n",n);
+            n++;
         }
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
@@ -94,7 +94,6 @@ int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
     }assert(n==N);
 
     return 0;
-
 }
 
 void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
@@ -115,10 +114,6 @@ void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
                 fprintf(file, "\n");
             }
         }
-        // for (int i = 0; i < 3072; ++i) {
-        //             fprintf(file, "%d ", image[i]);
-        //         }
-        // fprintf(file, "\n\n");
     }
 
     fclose(file);
@@ -127,11 +122,9 @@ void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     int N = NUM_IMAGES;
     clock_t t1,t2; 
  
-
     // if (N>50000 || N<=0){
     //     printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
     //     exit(EXIT_SUCCESS);
@@ -141,16 +134,14 @@ int main(){
     assert(input!=NULL);
 
     int labels[N];
-        
-    load_data(input,labels,N);
 
-    t1 = clock();
-    img2txt(input,labels,N);
+    t1 = clock();        
+    load_data(input,labels,N);
     t2 = clock();
+    
+    // img2txt(input,labels,N);
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-
-
 
     free(input);
     printf("END!\n");

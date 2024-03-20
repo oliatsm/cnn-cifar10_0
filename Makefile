@@ -3,7 +3,7 @@
 # CC = gcc
 # CFLAGS = -Wall -Wextra -std=c11
 CC = nvc
-CFLAGS = -g -Minfo=all -c11 -Wall -Wextra -march=native
+CFLAGS = -Minfo=all -c11 -Wall -Wextra -march=native #-g
 
 SRC = main.c
 EXECUTABLE = cnn-cifar10
