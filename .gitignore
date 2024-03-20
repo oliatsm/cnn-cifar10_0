@@ -6,5 +6,9 @@ nv_cifar
 nv_cnn
 nvc-compiler.md
 *.txt
+<<<<<<< HEAD
 conv
 conv.c
+=======
+Notes/.~*
+>>>>>>> main

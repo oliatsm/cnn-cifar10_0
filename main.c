@@ -7,7 +7,7 @@
 
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
-#define IMAGE_PIXELS 3072 //
+#define IMAGE_PIXELS 3072 // Number of pixels of each image
 
 #define MAX_TRAINING_DATA 50000
 #define MAX_BATCH_DATA 10000
@@ -17,14 +17,14 @@
 #define IMAGE_CHANEL 3
 
 
-// Foler for .bin files of cifar dataset on my system.
+// Folder for .bin files of cifar dataset on my system.
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 inline float get_image_pixel(float *image,int width,int height,int channel){
     return image[((height*IMAGE_HEIGHT)+width)+(IMAGE_WIDTH*IMAGE_HEIGHT)*channel];
 }
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
-int load_data(float **image, int * label, int N) {
+int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
     
     //Find how many batches I need and how many extra samples
     int batches = (N/MAX_BATCH_DATA)+1; 
@@ -32,8 +32,8 @@ int load_data(float **image, int * label, int N) {
     int n = 0;  //Image index
 
     printf("Batches: %d, Samples: %d.\n",batches,samples);
-    size_t LINE_SIZE = 3073;
     char file_name[1024];
+    size_t LINE_SIZE = 3073;
     
     //Loading the whole batches. If we need less than 10.000 images, the condition (b<batches) ends the loop.
     for (int b=1;b<batches;b++){
@@ -97,7 +97,7 @@ int load_data(float **image, int * label, int N) {
 
 }
 
-void img2txt(float **image, int *label, int N) {
+void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
     FILE *file = fopen("image.txt", "w");
 
     if (file == NULL) {
@@ -110,8 +110,7 @@ void img2txt(float **image, int *label, int N) {
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    // fprintf(file, "%f ", get_image_pixel(image[n],i,j,k));
-                    fprintf(file, "%f ", image[((j*IMAGE_HEIGHT)+i)+(IMAGE_WIDTH*IMAGE_HEIGHT)*k]);
+                    fprintf(file, "%.4f ", image[n][((j*32)+i)+1024*k]);
                 }
                 fprintf(file, "\n");
             }
@@ -128,6 +127,7 @@ void img2txt(float **image, int *label, int N) {
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
+    // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     int N = NUM_IMAGES;
     clock_t t1,t2; 
  
@@ -137,12 +137,8 @@ int main(){
     //     exit(EXIT_SUCCESS);
     // }
 
-    float **input=(float **)malloc(sizeof(float*)*N);
+    float (*input)[IMAGE_PIXELS]=malloc(sizeof(*input)*N);
     assert(input!=NULL);
-    for (int i=0;i<N;i++){
-        input[i] = (float *)malloc(sizeof(float)*IMAGE_PIXELS);
-        assert(input[i]!=NULL);
-    }
 
     int labels[N];
         
@@ -154,9 +150,7 @@ int main(){
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
-    for (int i=(N-1);i>=0;i--){
-        free(input[i]);
-    }
+
 
     free(input);
     printf("END!\n");
