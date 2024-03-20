@@ -17,7 +17,7 @@ const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
-int load_data(float **image, int * label, int N) {
+int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
     
     //Find how many batches I need and how many extra samples
     int batches = (N/MAX_BATCH_DATA)+1; 
@@ -90,7 +90,7 @@ int load_data(float **image, int * label, int N) {
 
 }
 
-void img2txt(float **image, int *label, int N) {
+void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
     FILE *file = fopen("image.txt", "w");
 
     if (file == NULL) {
@@ -103,7 +103,7 @@ void img2txt(float **image, int *label, int N) {
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%.0f ", image[n][((j*32)+i)+1024*k]);
+                    fprintf(file, "%.4f ", image[n][((j*32)+i)+1024*k]);
                 }
                 fprintf(file, "\n");
             }
@@ -119,7 +119,7 @@ void img2txt(float **image, int *label, int N) {
 
 
 int main(){
-    const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
+    // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     int N = NUM_IMAGES;
 
     // if (N>50000 || N<=0){
@@ -127,22 +127,14 @@ int main(){
     //     exit(EXIT_SUCCESS);
     // }
 
-    float **input=(float **)malloc(sizeof(float*)*N);
+    float (*input)[IMAGE_PIXELS]=malloc(sizeof(*input)*N);
     assert(input!=NULL);
-    for (int i=0;i<N;i++){
-        input[i] = (float *)malloc(sizeof(float)*IMAGE_PIXELS);
-        assert(input[i]!=NULL);
-    }
 
     int labels[N];
         
     load_data(input,labels,N);
 
-    // img2txt(input,labels,N);
-
-    for (int i=(N-1);i>=0;i--){
-        free(input[i]);
-    }
+    img2txt(input,labels,N);
 
     free(input);
     printf("END!\n");
