@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "layers.h"
+
 int load_data(float *data_array, int size, char * file_name){
 
     FILE * fp;
@@ -59,6 +61,11 @@ int main() {
     int W = 3;  // Input image width
     int K = 2;  // Filter size (KxK)
 
+    ConvLayer *L1;
+
+    L1=make_conv_layer(W,H,C,K,M,1,0);
+    print_conv_layer(L1);
+
     // Allocate memory for input, filter, and output (assuming float data type)
     float* X = (float*)malloc(C * H * W * sizeof(float));
     float* Weights = (float*)malloc(M * C * K * K * sizeof(float));
@@ -68,8 +75,11 @@ int main() {
     
     load_data(Weights,M * C * K * K,"WEIGHTS.txt");
 
+    L1->weights=Weights;
+    print_conv_layer(L1);
+
     // Perform convolution
-    convLayer_forward(M, C, H, W, K, X, Weights, Y);
+    convLayer_forward(M, C, H, W, K, X, L1->weights, Y);
 
     // Print the first few elements of the output (adjust printing as needed)
     printf("Output :\n");
