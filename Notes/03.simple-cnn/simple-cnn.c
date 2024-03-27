@@ -46,17 +46,23 @@ void convLayer_forward(float* X, ConvLayer *l, float* Y) {
     int M = l->out_depth;
 
     for(int m=0;m<M;m++){
-        for(int h=0;h<H_out;h++){
-            for(int w=0;w<W_out;w++){
+        int xh=-P;
+        for(int h=0;h<H_out;h++, xh+=S){
+            int xw=-P;
+            for(int w=0;w<W_out;w++,xw+=S){
                 int y_idx=w+(W_out*h)+ (W_out*H_out)*m;
                 Y[y_idx]=0.0;
                 for(int c=0;c<C;c++){
                     for(int fh=0;fh<K;fh++){
                         for(int fw=0;fw<K;fw++){
                             int f_idx=m*(K*K*C)+fw+(fh*K)+c*(K*K);
-                            Y[y_idx]+=l->weights[f_idx];
-                            printf("%d %d\n",y_idx,f_idx);
-                        }
+                            if((xh+fh)>=0&&(xw+fw)>=0 && (xh+fh)<H&&(xw+fw)<W){
+                            int x_idx= c*W*H+(xh+fh)*W+(xw+fw);                            
+                            Y[y_idx]+=l->weights[f_idx]*X[x_idx];
+                            //printf("Y:%d W:%d ",y_idx,f_idx);
+                            
+                            //printf("X:%d\n",x_idx);
+                        }}
 
                     }
                 }
