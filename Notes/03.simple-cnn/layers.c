@@ -6,8 +6,7 @@
 
 ConvLayer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     
-    ConvLayer *layer ;
-    layer=malloc(sizeof(ConvLayer));
+    ConvLayer *layer=malloc(sizeof(ConvLayer));
 
     layer->in_width=W;
     layer->in_height=H;
@@ -52,11 +51,12 @@ void print_conv_layer(ConvLayer * layer){
                 for(int i=0;i<layer->filter_width;i++){
                     int indx=(j*layer->filter_height)+i+(layer->filter_width*layer->filter_height)*k+(layer->filter_height*layer->in_depth*layer->filter_width)*f;
                     printf("%5.2f ",layer->weights[indx]);
-
                 }
-                putchar('\n');}
-                putchar('\n');}
                 putchar('\n');
+            }
+            putchar('\n');
+        }
+        //putchar('\n');
     }
 
 }
