@@ -33,6 +33,8 @@ void convLayer_forward(float* X, ConvLayer *l, float* Y) {
     int W=l->in_width;
     int C=l->in_depth;
     int K=l->filter_height;
+    int P=l->padding;
+    int S=l->stride;
     // Validate input dimensions for compatibility
     if (H < K || W < K) {
         printf("Error: Input image dimensions (H=%d, W=%d) must be greater than or equal to filter size (K=%d).\n", H, W, K);
@@ -43,22 +45,24 @@ void convLayer_forward(float* X, ConvLayer *l, float* Y) {
     int W_out = l->out_width;
     int M = l->out_depth;
 
-    for (int m = 0; m < M; m++) {  // for each output feature map
-        for (int h = 0; h < H_out; h++) { // for each output element
-            for (int w = 0; w < W_out; w++) {
-                Y[m * H_out * W_out + h * W_out + w] = 0.0f;  // Efficient indexing with offset
-                for (int c = 0; c < C; c++) { // sum over all input feature maps
-                    for (int p = 0; p < K; p++) { // KxK filter
-                        for (int q = 0; q < K; q++) {
-                            if((h + p)>=0 && (w + q)>=0 && (h + p)<H && (w + q)<W){
-                            int x_idx = c * H * W + (h + p) * W + (w + q);
-                            int w_idx = m * C * K * K + c * K * K + p * K + q;
-                            Y[m * H_out * W_out + h * W_out + w] += X[x_idx] * l->weights[w_idx];
-                            }
+    for(int m=0;m<M;m++){
+        for(int h=0;h<H_out;h++){
+            for(int w=0;w<W_out;w++){
+                int y_idx=w+(W_out*h)+ (W_out*H_out)*m;
+                Y[y_idx]=0.0;
+                for(int c=0;c<C;c++){
+                    for(int fh=0;fh<K;fh++){
+                        for(int fw=0;fw<K;fw++){
+                            int f_idx=m*(K*K*C)+fw+(fh*K)+c*(K*K);
+                            Y[y_idx]+=l->weights[f_idx];
+                            printf("%d %d\n",y_idx,f_idx);
                         }
+
                     }
                 }
-            // Y[m * H_out * W_out + h * W_out + w]+=1.0f;//bias
+
+                Y[y_idx]+=l->bias[m];
+
             }
         }
     }
@@ -70,7 +74,7 @@ void print_map(float * x, int W, int H, int D ){
             for(int j=0;j<H;j++){
                 for(int i=0;i<W;i++){
                     int indx=(j*H)+i+(W*H)*k;
-                    printf("%5.2f ",x[indx]);
+                    printf("%2.f ",x[indx]);
                 }
                 putchar('\n');
             }
@@ -124,8 +128,8 @@ int main() {
     //**********************************************************************
     int M = 2;  // Number of output feature maps
     int C = 3;  // Number of input feature maps
-    int H = 6;  // Input image height
-    int W = 6;  // Input image width
+    int H = 5;  // Input image height
+    int W = 5;  // Input image width
     int K = 3;  // Filter size (KxK)
     ConvLayer * L2;
     L2=make_conv_layer(W,H,C,K,M,2,1);
@@ -136,9 +140,14 @@ int main() {
     L2->bias[0]=1;L2->bias[1]=0;
     print_conv_layer(L2);
 
-    float * Output =malloc(sizeof(float)*L2->out_depth*L2->out_height*L2->out_height);
+    float * Output =malloc(sizeof(float)*(L2->out_depth*L2->out_height*L2->out_height));
+    for(int i=0;i<(L2->out_depth*L2->out_height*L2->out_height);i++)
+        Output[i]=-1.0;
+    
+    printf("Output:\n");
+    print_map(Output,L2->out_width,L2->out_height,L2->out_depth);
 
-    convLayer_forward(M,C,H,W,K,Input,L2->weights,Output);
+    convLayer_forward(Input,L2,Output);
 
 printf("Output:\n");
     print_map(Output,L2->out_width,L2->out_height,L2->out_depth);

@@ -50,7 +50,7 @@ void print_conv_layer(ConvLayer * layer){
             for(int j=0;j<layer->filter_height;j++){
                 for(int i=0;i<layer->filter_width;i++){
                     int indx=(j*layer->filter_height)+i+(layer->filter_width*layer->filter_height)*k+(layer->filter_height*layer->in_depth*layer->filter_width)*f;
-                    printf("%5.2f ",layer->weights[indx]);
+                    printf("%2.f ",layer->weights[indx]);
                 }
                 putchar('\n');
             }
