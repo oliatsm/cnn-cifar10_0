@@ -51,13 +51,18 @@ void increase_data(int N,int M,float * arr){
 }
 int main() {
     float **Input = malloc(sizeof(float*)*NUM_IMG+sizeof(float)*(C_in*N_in*N_in));
-    for(int i=0;i<NUM_IMG;)
+    for(int i=0;i<NUM_IMG;i++)
     if (Input == NULL) {
         printf("Memory allocation failed for Input\n");
         return 1;
     }
 
-    load_data(N_in,C_in,Input,"../data/input.txt");
+    Input[0]=(float *)(Input+NUM_IMG);
+    for(int i=1;i<NUM_IMG;i++){
+        Input[i]=Input[i-1]+(C_in*N_in*N_in);
+    }
+
+    load_data(N_in,C_in,Input[0],"../data/input.txt");
 
     float * filters1=(float *)malloc(sizeof(float)*M1*C_in*K1*K1);
     if (filters1 == NULL) {
@@ -77,7 +82,7 @@ int main() {
     }
     printf("Conv: X[%d][%d][%d],W[%d][%d][%d],Y[%d][%d][%d]\n",
                     N_in,N_in,C_in,K1,K1,C_in,N1,N1,M1);
-    convLayer_forward(N_in,C_in,Input,M1,K1,filters1,bias1,N1,O1,S1,P1);
+    convLayer_forward(N_in,C_in,Input[0],M1,K1,filters1,bias1,N1,O1,S1,P1);
 
 // printf("O1:\n");
 //     print_map(N1,M1,O1);
@@ -90,14 +95,9 @@ int main() {
 
 //     convLayer_forward(N_in,C_in,Input,M1,K1,filters1,bias1,N1,O1,S1,P1);
 //     printf("O1+%d:\n",i+1);
-//     print_map(N1,M1,O1);
-// printf("\n");
+    print_map(N1,M1,O1);
+printf("\n");
 // }
-
-
-
-
-    
 
     free(Input);
     free(filters1);
