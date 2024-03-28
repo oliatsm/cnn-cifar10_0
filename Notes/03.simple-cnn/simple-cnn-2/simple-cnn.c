@@ -26,36 +26,6 @@ return 0;
 }
 
 
-void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P) {
-// void convLayer_forward(float* X, ConvLayer *l, float* Y) {
-
-    for(int m=0;m<M;m++){
-        int x_j=-P;
-        for(int j=0;j<N_out;j++, x_j+=S){
-            int x_i=-P;
-            for(int i=0;i<N_out;i++,x_i+=S){
-                int y_idx=i+(N_out*j)+ (N_out*N_out)*m;
-                Y[y_idx]=0.0;
-                // float sum=0.f;
-                for(int c=0;c<C;c++){
-                    for(int f_j=0;f_j<K;f_j++){
-                        for(int f_i=0;f_i<K;f_i++){
-                            int f_idx=m*(K*K*C)+f_i+(f_j*K)+c*(K*K);
-                            if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<N&&(x_i+f_i)<N){
-                                int x_idx= c*N*N+(x_j+f_j)*N+(x_i+f_i);                            
-                                Y[y_idx]+=Weights[f_idx]*X[x_idx];
-                            // printf("Y:%d W:%d ",y_idx,f_idx);
-                            // printf("X:%d\n",x_idx);
-                            }
-                        }
-                    }
-                }
-                // Y[y_idx]=sum;
-                Y[y_idx]+=bias[m];
-            }
-        }
-    }
-}
 
 void print_map(int n,int m,float *x){
 
@@ -65,24 +35,30 @@ void print_map(int n,int m,float *x){
                     int idx=i+(n*j)+(n*n)*k;
                     printf("%2.f ",x[idx]);
                 }
-                putchar('\n');
+                //putchar('\n');
             }
-            putchar('\n');
+            //putchar('\n');
         }
         //putchar('\n');
 }
-
+void increase_data(int N,int M,float * arr){
+       for(int m=0;m<M;m++){ 
+        for(int j=0;j<N;j++){ 
+            for(int i=0;i<N;i++){
+                int idx=i+j*N+(N*N)*m;
+              arr[idx]++;  
+            }}}
+}
 int main() {
-    float *Input = malloc(sizeof(float)*C_in*N_in*N_in);
+    float **Input = malloc(sizeof(float*)*NUM_IMG+sizeof(float)*(C_in*N_in*N_in));
+    for(int i=0;i<NUM_IMG;)
     if (Input == NULL) {
         printf("Memory allocation failed for Input\n");
         return 1;
     }
 
     load_data(N_in,C_in,Input,"../data/input.txt");
-    // print_map(N_in,C_in,Input[0]);
 
-    
     float * filters1=(float *)malloc(sizeof(float)*M1*C_in*K1*K1);
     if (filters1 == NULL) {
         printf("Memory allocation failed for filters1\n");
@@ -103,7 +79,21 @@ int main() {
                     N_in,N_in,C_in,K1,K1,C_in,N1,N1,M1);
     convLayer_forward(N_in,C_in,Input,M1,K1,filters1,bias1,N1,O1,S1,P1);
 
-    print_map(N1,M1,O1);
+// printf("O1:\n");
+//     print_map(N1,M1,O1);
+// printf("\n");
+// for(int i=0;i<5;i++){
+// printf("In+%d:\n",i+1);
+//     increase_data(N_in,C_in,Input);
+//     print_map(N_in,C_in,Input);
+// printf("\n");
+
+//     convLayer_forward(N_in,C_in,Input,M1,K1,filters1,bias1,N1,O1,S1,P1);
+//     printf("O1+%d:\n",i+1);
+//     print_map(N1,M1,O1);
+// printf("\n");
+// }
+
 
 
 

@@ -4,59 +4,33 @@
 
 #include "layers.h"
 
-ConvLayer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
-    
-    ConvLayer *layer=malloc(sizeof(ConvLayer));
+void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P) {
+// void convLayer_forward(float* X, ConvLayer *l, float* Y) {
 
-    layer->in_width=W;
-    layer->in_height=H;
-    layer->in_depth=D;
-
-    layer->filter_width=K;
-    layer->filter_height=K;
-    layer->num_filters=M;
-
-    layer->stride =S;
-    layer->padding=P;
-
-    layer->out_width=(W-K+2*P)/S+1;
-    layer->out_height=(H-K+2*P)/S+1;
-    layer->out_depth=M;
-
-    layer->weights=malloc(sizeof(float)*K*K*M*D);
-    for(int i=0;i<(K*K*M*D);i++){
-        layer->weights[i]=0.f;
-    }
-
-    layer->bias=malloc(sizeof(float)*M);
-    for(int i=0;i<(M);i++){
-        layer->bias[i]=0.f;
-    }
-    
-    return layer;
-}
-
-void print_conv_layer(ConvLayer * layer){
-
-    printf("Input: %d,%d,%d \n",layer->in_width,layer->in_height,layer->in_depth);
-    printf("Filters: (%d,%d)x%d , S:%d P:%d \n",layer->filter_width,layer->filter_height,layer->num_filters,
-                        layer->stride,layer->padding);
-
-    printf("Output: %d,%d,%d \n",layer->out_width,layer->out_height,layer->out_depth);
-
-    for (int f=0;f<layer->num_filters;f++){
-        printf("W%d:\n",f);
-        for(int k=0;k<layer->in_depth;k++){
-            for(int j=0;j<layer->filter_height;j++){
-                for(int i=0;i<layer->filter_width;i++){
-                    int indx=(j*layer->filter_height)+i+(layer->filter_width*layer->filter_height)*k+(layer->filter_height*layer->in_depth*layer->filter_width)*f;
-                    printf("%2.f ",layer->weights[indx]);
+    for(int m=0;m<M;m++){
+        int x_j=-P;
+        for(int j=0;j<N_out;j++, x_j+=S){
+            int x_i=-P;
+            for(int i=0;i<N_out;i++,x_i+=S){
+                int y_idx=i+(N_out*j)+ (N_out*N_out)*m;
+                Y[y_idx]=0.0;
+                // float sum=0.f;
+                for(int c=0;c<C;c++){
+                    for(int f_j=0;f_j<K;f_j++){
+                        for(int f_i=0;f_i<K;f_i++){
+                            int f_idx=m*(K*K*C)+f_i+(f_j*K)+c*(K*K);
+                            if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<N&&(x_i+f_i)<N){
+                                int x_idx= c*N*N+(x_j+f_j)*N+(x_i+f_i);                            
+                                Y[y_idx]+=Weights[f_idx]*X[x_idx];
+                            // printf("Y:%d W:%d ",y_idx,f_idx);
+                            // printf("X:%d\n",x_idx);
+                            }
+                        }
+                    }
                 }
-                putchar('\n');
+                // Y[y_idx]=sum;
+                Y[y_idx]+=bias[m];
             }
-            putchar('\n');
         }
-        //putchar('\n');
     }
-
 }
