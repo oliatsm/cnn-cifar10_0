@@ -22,13 +22,18 @@ void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float 
                                 int x_idx= c*N*N+(x_j+f_j)*N+(x_i+f_i);                            
                                 Y[y_idx]+=Weights[f_idx]*X[x_idx];
                             // printf("Y:%d W:%d ",y_idx,f_idx);
-                            // printf("X:%d\n",x_idx);
+                            if(y_idx==1024){
+                            // printf("X:%d,%f\n",x_idx,X[x_idx]);
+                            // printf("X:%d,%f\n",f_idx,Weights[f_idx]);
+                            }
                             }
                         }
                     }
                 }
                 // Y[y_idx]=sum;
                 Y[y_idx]+=bias[m];
+                printf("%d,%f\n",y_idx,Y[y_idx]);
+                printf("%d,%d,%d \n",i,j,m);
             }
         }
     }

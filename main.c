@@ -122,6 +122,7 @@ void img2txt(float **image, int *label, int N) {
 }
 
 void arr2txt(float *arr, int N,int M, char * file_name) {
+    printf("Writing to file...\n");
     FILE *file = fopen(file_name, "w");
 
     if (file == NULL) {
@@ -132,7 +133,9 @@ void arr2txt(float *arr, int N,int M, char * file_name) {
     for (int k = 0; k < M; ++k) {
         for (int j = 0; j < N; ++j) {
             for (int i = 0; i < N; ++i) {
-                fprintf(file, "%.4f ", image[n][((j*32)+i)+1024*k]);
+                int idx = ((j*N)+i)+(N*N*M)*k;
+                // fprintf(file, "%.4f ", arr[idx]);
+                printf("%d\n",idx);
             }
             fprintf(file, "\n");
         }
@@ -145,7 +148,7 @@ int load_weights(float * w,float * b ,char * file_name){
     printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",M1,K1,K1,C_in);
 
     int filter_width, filter_height, depth, filters;
-
+    
     FILE *fin = fopen(file_name, "r");
     if (fin == NULL) {
         printf("Error opening file!\n");
@@ -154,18 +157,22 @@ int load_weights(float * w,float * b ,char * file_name){
 
     fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
     // printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
+    assert(filter_width==K1);
+    assert(filter_height==K1);
+    assert(depth==C_in);
+    assert(filters==M1);
 
-
+    double val;
     for(int f = 0; f < filters; f++) {
         for (int x = 0; x < filter_width; x++) {
             for (int y = 0; y < filter_height; y++) {
                 for (int d = 0; d < depth; d++) {
-                    double val;
-                    fscanf(fin, "%lf", &val);
+                    
+                    // fscanf(fin, "%lf", &val);
                     // volume_set(l->filters[f], x, y, d, val);
                     int idx=(filter_width*y+x)*depth+d;
-                    // printf("%d ",idx);
-                    w[idx]=(float)val;
+                    printf("%d \n",idx);
+                    // w[idx]=(float)val;
                     // printf("%f \n",w[idx]);
                 }
             }
@@ -173,12 +180,13 @@ int load_weights(float * w,float * b ,char * file_name){
 
     }
 
+    printf(".");
     for(int d = 0; d < M1; d++) {
-        double val;
-        fscanf(fin, "%lf", &val);
+        // fscanf(fin, "%lf", &val);
         // volume_set(l->biases, 0, 0, d, val);
         int idx=(filter_width*0+0)*depth+d;
-        b[idx]=(float)val;
+        // b[idx]=(float)val;
+        printf("%d \n",idx);
         // printf("%f \n",b[idx]);
     }
 
@@ -213,7 +221,7 @@ int main(){
     t2 = clock();
 
     //Weights
-    float *weights1=malloc(sizeof(float)*M1*C_in*K1*K1);
+    float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
     assert(weights1!=NULL);
     float * bias1=(float *)malloc(sizeof(float)*M1);
      assert(bias1!=NULL);
@@ -225,11 +233,20 @@ int main(){
     float * O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
 
-    convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    // convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    // arr2txt(O1,N1,M1,"O1.txt");
+    // printf("%d %d %d\n",N1,N1,M1);
+    // for (size_t i = 0; i < N1*N1*M1; i++)
+    // {
+    //     printf("%f\n",O1[i]);
+    // }
+    
     
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-
+    free(O1);
+    free(bias1);
+    free(weights1);
     free(input);
     printf("END!\n");
 
