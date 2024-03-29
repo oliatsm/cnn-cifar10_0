@@ -5,7 +5,7 @@
 CC = nvc
 CFLAGS = -Minfo=all -c11 -Wall -Wextra -march=native #-g
 
-SRC = main.c
+SRC = main.c layers.c
 EXECUTABLE = cnn-cifar10
 
 all: $(EXECUTABLE)

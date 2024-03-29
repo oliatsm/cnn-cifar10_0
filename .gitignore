@@ -9,3 +9,11 @@ image.txt
 conv
 conv.c
 Notes/.~*
+*.o
+Notes/03.simple-cnn/*.o
+Notes/03.simple-cnn/cnn
+
+Notes/03.simple-cnn/out_*
+Notes/02.arrays/Chapter4-master/
+Notes/02.arrays/Chapter4-master.zip
+Notes/03.simple-cnn/simple-cnn-2/out*

@@ -5,6 +5,8 @@
 #include <string.h>
 #include <time.h> 
 
+#include "layers.h"
+
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
@@ -24,7 +26,7 @@ inline float get_image_pixel(float *image,int width,int height,int channel){
     return image[((height*IMAGE_HEIGHT)+width)+(IMAGE_WIDTH*IMAGE_HEIGHT)*channel];
 }
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
-int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
+int load_data(float **image, int * label, int N) {
     
     //Find how many batches I need and how many extra samples
     int batches = (N/MAX_BATCH_DATA)+1; 
@@ -96,7 +98,7 @@ int load_data(float (*image)[IMAGE_PIXELS], int * label, int N) {
     return 0;
 }
 
-void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
+void img2txt(float **image, int *label, int N) {
     FILE *file = fopen("image.txt", "w");
 
     if (file == NULL) {
@@ -105,7 +107,7 @@ void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
     }
 
     for (int n = 0; n < N; n+=5000) {
-        fprintf(file, "%d: %d \n",n,label[n]);
+        // fprintf(file, "%d: %d \n",n,label[n]);
         for (int k = 0; k < 3; ++k) {
             for (int j = 0; j < 32; ++j) {
                 for (int i = 0; i < 32; ++i) {
@@ -119,6 +121,71 @@ void img2txt(float (*image)[IMAGE_PIXELS], int *label, int N) {
     fclose(file);
 }
 
+void arr2txt(float *arr, int N,int M, char * file_name) {
+    FILE *file = fopen(file_name, "w");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    for (int k = 0; k < M; ++k) {
+        for (int j = 0; j < N; ++j) {
+            for (int i = 0; i < N; ++i) {
+                fprintf(file, "%.4f ", image[n][((j*32)+i)+1024*k]);
+            }
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
+
+int load_weights(float * w,float * b ,char * file_name){
+    printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",M1,K1,K1,C_in);
+
+    int filter_width, filter_height, depth, filters;
+
+    FILE *fin = fopen(file_name, "r");
+    if (fin == NULL) {
+        printf("Error opening file!\n");
+        return 1;
+    }
+
+    fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
+    // printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
+
+
+    for(int f = 0; f < filters; f++) {
+        for (int x = 0; x < filter_width; x++) {
+            for (int y = 0; y < filter_height; y++) {
+                for (int d = 0; d < depth; d++) {
+                    double val;
+                    fscanf(fin, "%lf", &val);
+                    // volume_set(l->filters[f], x, y, d, val);
+                    int idx=(filter_width*y+x)*depth+d;
+                    // printf("%d ",idx);
+                    w[idx]=(float)val;
+                    // printf("%f \n",w[idx]);
+                }
+            }
+        }
+
+    }
+
+    for(int d = 0; d < M1; d++) {
+        double val;
+        fscanf(fin, "%lf", &val);
+        // volume_set(l->biases, 0, 0, d, val);
+        int idx=(filter_width*0+0)*depth+d;
+        b[idx]=(float)val;
+        // printf("%f \n",b[idx]);
+    }
+
+    fclose(fin);
+    
+    return 0;
+}
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
@@ -130,16 +197,36 @@ int main(){
     //     exit(EXIT_SUCCESS);
     // }
 
-    float (*input)[IMAGE_PIXELS]=malloc(sizeof(*input)*N);
+    // float (*input)[IMAGE_PIXELS]=malloc(sizeof(*input)*N);
+    float **input = (float **)malloc(N*sizeof(float *) + N*IMAGE_PIXELS*sizeof(float));
     assert(input!=NULL);
+
+    input[0] = (float *)(input + N);
+   for (int j = 1; j < N; j++) {
+      input[j] = input[j-1] + IMAGE_PIXELS;
+   }
 
     int labels[N];
 
     t1 = clock();        
     load_data(input,labels,N);
     t2 = clock();
+
+    //Weights
+    float *weights1=malloc(sizeof(float)*M1*C_in*K1*K1);
+    assert(weights1!=NULL);
+    float * bias1=(float *)malloc(sizeof(float)*M1);
+     assert(bias1!=NULL);
     
+    load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
+   
     // img2txt(input,labels,N);
+    //Test First Convolution Layer
+    float * O1 =malloc(sizeof(float)*N1*N1*M1);
+    assert(O1!=NULL);
+
+    convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
