@@ -15,6 +15,6 @@
 #define N1 (N_in-K1+2*P1)/S1+1 //Output Width-Height
 #define M1 2 //Output number of Feature Maps 
 
-void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P);
+void convLayer_forward(int N,int C, double* X,int M, int K, double* Weights,double *bias, int N_out,double* Y,int S,int P);
 
 #endif

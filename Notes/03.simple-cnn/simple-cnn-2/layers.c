@@ -4,8 +4,8 @@
 
 #include "layers.h"
 
-void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P) {
-// void convLayer_forward(float* X, ConvLayer *l, float* Y) {
+void convLayer_forward(int N,int C, double* X,int M, int K, double* Weights,double *bias, int N_out,double* Y,int S,int P) {
+// void convLayer_forward(double* X, ConvLayer *l, double* Y) {
 
     for(int m=0;m<M;m++){
         int x_j=-P;
@@ -14,7 +14,7 @@ void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float 
             for(int i=0;i<N_out;i++,x_i+=S){
                 int y_idx=i+(N_out*j)+ (N_out*N_out)*m;
                 Y[y_idx]=0.0;
-                // float sum=0.f;
+                // double sum=0.f;
                 for(int c=0;c<C;c++){
                     for(int f_j=0;f_j<K;f_j++){
                         for(int f_i=0;f_i<K;f_i++){
@@ -22,8 +22,9 @@ void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float 
                             if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<N&&(x_i+f_i)<N){
                                 int x_idx= c*N*N+(x_j+f_j)*N+(x_i+f_i);                            
                                 Y[y_idx]+=Weights[f_idx]*X[x_idx];
-                            // printf("Y:%d W:%d ",y_idx,f_idx);
-                            // printf("X:%d\n",x_idx);
+                            printf("Y:%d W:%d ",y_idx,f_idx);
+                            printf("X:%d\n",x_idx);
+                            printf("%0.f*%0.f=%0.f\n",Weights[f_idx],X[x_idx],Y[y_idx]);
                             }
                         }
                     }
