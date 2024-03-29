@@ -5,49 +5,46 @@
 
 int load_data(int n,int m,double *data_array, char * file_name){
     printf("Loading Data...\n");
-    // FILE * fp;
-    // fp=fopen(file_name,"r");
-    // if(fp==NULL){
-    //     printf("Error opening file!\n");
-    //     return 1;
-    // }
+    FILE * fp;
+    fp=fopen(file_name,"r");
+    if(fp==NULL){
+        printf("Error opening file!\n");
+        return 1;
+    }
 
-    // int number;
+    int number;
     for(int i=0;i<n*n*m;i++){
-        // fscanf(fp,"%d",&number);
-        // data_array[i]=number;
+        fscanf(fp,"%d",&number);
+        data_array[i]=number;
         // printf("%d ",number);
-        data_array[i]=i;
     }
     // printf(".\n");
 
-    // fclose(fp);
+    fclose(fp);
     return 0;
 }
 
 int load_input(int n,int m,double **data_array, char * file_name){
     printf("Loading Data...\n");
-    // FILE * fp;
-    // fp=fopen(file_name,"r");
-    // if(fp==NULL){
-    //     printf("Error opening file!\n");
-    //     return 1;
-    // }
+    FILE * fp;
+    fp=fopen(file_name,"r");
+    if(fp==NULL){
+        printf("Error opening file!\n");
+        return 1;
+    }
 
     for(int img=0;img<NUM_IMG;img++){
-        // int number;
+        int number;
         
         for(int i=0;i<n*n*m;i++){
-            // fscanf(fp,"%d",&number);
-            // data_array[img][i]=number;
+            fscanf(fp,"%d",&number);
+            data_array[img][i]=number;
             // printf("%d ",number);
             // printf("(%d) %d\n",img,i);
-            data_array[img][i]=i;//rand()%3;
-
-
+            // data_array[img][i]=i;//rand()%3;
         }
     }
-// fclose(fp);
+fclose(fp);
 return 0;
 
 }
@@ -89,10 +86,6 @@ int main() {
     }
 
     load_input(N_in,C_in,Input,"../data/input.txt");
-    // for (int i = 0; i < NUM_IMG; i++){
-    //     print_map(N_in,C_in,Input[i]);
-    //     printf("\n");
-    // }
     
 
     double * filters1=(double *)malloc(sizeof(double)*M1*C_in*K1*K1);
@@ -100,8 +93,8 @@ int main() {
         printf("Memory allocation failed for filters1\n");
         return 1;
     }
-    load_data(K1,M1*C_in,filters1,"../data/weights_2.txt");
-//     // print_map(K1,M1*C_in,filters1);
+    load_data(K1,M1*C_in,filters1,"../data/weights.txt");
+
     double * bias1=(double *)malloc(sizeof(double)*M1);
     bias1[0]=1;
     bias1[1]=0;
@@ -113,11 +106,9 @@ int main() {
     }
     printf("Conv: X[%d][%d][%d],W[%d][%d][%d],Y[%d][%d][%d]\n",
                     N_in,N_in,C_in,K1,K1,C_in,N1,N1,M1);
-    printf("W:\n");
-    print_map(K1,C_in*M1,filters1);    printf("\n");
+    
 
-for(int i=0;i<1;i++){
-    print_map(N_in,C_in,Input[i]);    printf("\n");
+for(int i=0;i<NUM_IMG;i++){
     convLayer_forward(N_in,C_in,Input[i],M1,K1,filters1,bias1,N1,O1,S1,P1);
     printf("O1:\n");
     print_map(N1,M1,O1);

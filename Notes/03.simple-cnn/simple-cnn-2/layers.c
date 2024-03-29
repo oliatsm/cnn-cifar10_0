@@ -22,9 +22,8 @@ void convLayer_forward(int N,int C, double* X,int M, int K, double* Weights,doub
                             if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<N&&(x_i+f_i)<N){
                                 int x_idx= c*N*N+(x_j+f_j)*N+(x_i+f_i);                            
                                 Y[y_idx]+=Weights[f_idx]*X[x_idx];
-                            printf("Y:%d W:%d ",y_idx,f_idx);
-                            printf("X:%d\n",x_idx);
-                            printf("%0.f*%0.f=%0.f\n",Weights[f_idx],X[x_idx],Y[y_idx]);
+                            // printf("Y:%d W:%d ",y_idx,f_idx);
+                            // printf("X:%d\n",x_idx);
                             }
                         }
                     }
