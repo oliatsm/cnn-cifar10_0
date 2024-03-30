@@ -162,31 +162,32 @@ int load_weights(float * w,float * b ,char * file_name){
     assert(depth==C_in);
     assert(filters==M1);
 
-    double val;
-    for(int f = 0; f < filters; f++) {
-        for (int x = 0; x < filter_width; x++) {
-            for (int y = 0; y < filter_height; y++) {
-                for (int d = 0; d < depth; d++) {
-                    
-                    // fscanf(fin, "%lf", &val);
+    float val;
+    for(int f = 0; f < M1; f++) {
+        for (int d = 0; d < C_in; d++) {
+        for (int j = 0; j < K1; j++) {
+            for (int i = 0; i < K1; i++) {
+                
+                    fscanf(fin, "%lf", &val);
                     // volume_set(l->filters[f], x, y, d, val);
-                    int idx=(filter_width*y+x)*depth+d;
+                    int idx=i+j*K1+(d+f*C_in)*(K1*K1);
                     printf("%d \n",idx);
-                    // w[idx]=(float)val;
+                    w[idx]=(float)val;
                     // printf("%f \n",w[idx]);
+                    // printf("%f \n",val);
                 }
             }
         }
 
     }
+    
 
-    printf(".");
     for(int d = 0; d < M1; d++) {
-        // fscanf(fin, "%lf", &val);
+        fscanf(fin, "%lf", &val);
         // volume_set(l->biases, 0, 0, d, val);
-        int idx=(filter_width*0+0)*depth+d;
-        // b[idx]=(float)val;
-        printf("%d \n",idx);
+        int idx=d;
+        b[idx]=(float)val;
+        // printf("%d \n",idx);
         // printf("%f \n",b[idx]);
     }
 
@@ -195,24 +196,35 @@ int load_weights(float * w,float * b ,char * file_name){
     return 0;
 }
 
+void print_map(int n,int m,int f,float *x){
+
+        for(int l=0;l<f;l++){
+        for(int i=0;i<n;i++){
+            for(int j=0;j<n;j++){
+                for(int k=0;k<m;k++){
+                    int idx=i+(n*j)+(n*n)*k+(n*n*m)*f;
+                    printf("%f \n",x[idx]);
+                }
+                // putchar('\n');
+            }
+            // putchar('\n');
+        }
+        // putchar('\n');
+    }
+}
+
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     int N = NUM_IMAGES;
     clock_t t1,t2; 
  
-    // if (N>50000 || N<=0){
-    //     printf("Not Valind Number of Sample Images.\n (0 < n < 50.000)\n");
-    //     exit(EXIT_SUCCESS);
-    // }
-
-    // float (*input)[IMAGE_PIXELS]=malloc(sizeof(*input)*N);
     float **input = (float **)malloc(N*sizeof(float *) + N*IMAGE_PIXELS*sizeof(float));
     assert(input!=NULL);
 
     input[0] = (float *)(input + N);
-   for (int j = 1; j < N; j++) {
+    for (int j = 1; j < N; j++) {
       input[j] = input[j-1] + IMAGE_PIXELS;
-   }
+    }
 
     int labels[N];
 
@@ -227,21 +239,14 @@ int main(){
      assert(bias1!=NULL);
     
     load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
-   
-    // img2txt(input,labels,N);
+    print_map(K1,C_in,M1,weights1);
+
     //Test First Convolution Layer
     float * O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
 
     // convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
-    // arr2txt(O1,N1,M1,"O1.txt");
-    // printf("%d %d %d\n",N1,N1,M1);
-    // for (size_t i = 0; i < N1*N1*M1; i++)
-    // {
-    //     printf("%f\n",O1[i]);
-    // }
-    
-    
+        
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     free(O1);
