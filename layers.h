@@ -14,7 +14,7 @@
 #define S1 1 //Stride
 #define P1 2 //Padding
 //Layer 1 Output
-#define N1 (N_in-K1+2*P1)/S1+1 //Output Width-Height
+#define N1 32//(N_in-K1+2*P1)/S1+1 //Output Width-Height
 #define M1 16 //Output number of Feature Maps 
 
 void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P);

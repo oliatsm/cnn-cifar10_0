@@ -122,20 +122,21 @@ void img2txt(float **image, int *label, int N) {
 }
 
 void arr2txt(float *arr, int N,int M, char * file_name) {
-    printf("Writing to file...\n");
+// void arr2txt(int N,int M, char * file_name) {
+
     FILE *file = fopen(file_name, "w");
 
     if (file == NULL) {
         printf("Error opening file!\n");
         return;
     }
-
+    fprintf(file,"%d,%d,%d\n",N,N,M);
     for (int k = 0; k < M; ++k) {
         for (int j = 0; j < N; ++j) {
             for (int i = 0; i < N; ++i) {
-                int idx = ((j*N)+i)+(N*N*M)*k;
-                // fprintf(file, "%.4f ", arr[idx]);
-                printf("%d\n",idx);
+                int idx = ((j*N)+i)+(N*N)*k;
+                fprintf(file, "%f ", arr[idx]);
+                // printf("%d\n",idx);
             }
             fprintf(file, "\n");
         }
@@ -191,11 +192,11 @@ int load_weights(float * w,float * b ,char * file_name){
 
 void print_map(int n,int m,int f,float *x){
 
-        for(int l=0;l<f;l++){
+    for(int l=0;l<f;l++){
         for(int i=0;i<n;i++){
             for(int j=0;j<n;j++){
                 for(int k=0;k<m;k++){
-                    int idx=i+(n*j)+(n*n)*k+(n*n*m)*f;
+                    int idx=i+(n*j)+(n*n)*k+(n*n*m)*l;
                     printf("%f \n",x[idx]);
                 }
                 // putchar('\n');
@@ -232,20 +233,21 @@ int main(){
      assert(bias1!=NULL);
     
     load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
-    // for(int i=0;i<(M1*C_in*K1*K1);i++)
-    //     printf("%f\n",weights1[i]);
-
+    
     //Test First Convolution Layer
     float * O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
 
-    // convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
-        
+    convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    
+    arr2txt(O1,N1,M1,"O1.txt");
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     free(O1);
+
     free(bias1);
     free(weights1);
+
     free(input);
     printf("END!\n");
 
