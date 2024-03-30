@@ -156,39 +156,32 @@ int load_weights(float * w,float * b ,char * file_name){
     }
 
     fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
-    // printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
+    printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
     assert(filter_width==K1);
     assert(filter_height==K1);
     assert(depth==C_in);
     assert(filters==M1);
 
-    float val;
-    for(int f = 0; f < M1; f++) {
-        for (int d = 0; d < C_in; d++) {
-        for (int j = 0; j < K1; j++) {
-            for (int i = 0; i < K1; i++) {
-                
+    double val;
+    for(int f = 0; f < filters; f++) {
+        for (int i = 0; i < filter_width; i++) {
+            for (int j = 0; j < filter_height; j++) {
+                for (int d = 0; d < depth; d++) {
                     fscanf(fin, "%lf", &val);
-                    // volume_set(l->filters[f], x, y, d, val);
                     int idx=i+j*K1+(d+f*C_in)*(K1*K1);
-                    printf("%d \n",idx);
                     w[idx]=(float)val;
-                    // printf("%f \n",w[idx]);
-                    // printf("%f \n",val);
+                    // printf("%d, %lf->%f\n",idx,val,w[idx]);
                 }
             }
         }
 
     }
-    
 
     for(int d = 0; d < M1; d++) {
         fscanf(fin, "%lf", &val);
-        // volume_set(l->biases, 0, 0, d, val);
         int idx=d;
         b[idx]=(float)val;
-        // printf("%d \n",idx);
-        // printf("%f \n",b[idx]);
+        // printf("%d\n",idx);
     }
 
     fclose(fin);
@@ -239,7 +232,8 @@ int main(){
      assert(bias1!=NULL);
     
     load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
-    print_map(K1,C_in,M1,weights1);
+    // for(int i=0;i<(M1*C_in*K1*K1);i++)
+    //     printf("%f\n",weights1[i]);
 
     //Test First Convolution Layer
     float * O1 =malloc(sizeof(float)*N1*N1*M1);
