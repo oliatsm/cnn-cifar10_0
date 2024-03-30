@@ -221,10 +221,8 @@ int main(){
     }
 
     int labels[N];
-
-    t1 = clock();        
+        
     load_data(input,labels,N);
-    t2 = clock();
 
     //Weights
     float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
@@ -238,7 +236,10 @@ int main(){
     float * O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
 
-    convLayer_forward(N_in,C_in,input[0],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    t1 = clock();
+    for(int i=0;i<NUM_IMAGES;i++)
+        convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    t2 = clock();
     
     arr2txt(O1,N1,M1,"O1.txt");
 

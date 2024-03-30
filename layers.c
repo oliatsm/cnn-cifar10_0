@@ -5,7 +5,7 @@
 #include "layers.h"
 
 void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P) {
-
+    printf(".");
     for(int m=0;m<M;m++){
         int x_j=-P;
         for(int j=0;j<N_out;j++, x_j+=S){
