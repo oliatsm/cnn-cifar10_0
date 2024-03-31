@@ -52,5 +52,9 @@ for (int i=0;i<NUM_IMAGES;i++){
 >[!CAUTION]
 Το `#pragma acc parallel loop copyout(input[:NUM_IMAGES][:IMAGE_PIXELS])` δεν επιστρέφει τα δεδομένα στον host. Χρειάζεται `update self`.
 
+Εκτελώ έλεγχο για σφάλματα στη μνήμη με cuda-memcheck
+```
+cuda-memcheck --leak-check full  cnn-cifar10
+```
 
 
