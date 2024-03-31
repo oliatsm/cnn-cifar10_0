@@ -5,7 +5,7 @@
 #include "layers.h"
 
 void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P) {
-    printf(".");
+    
     for(int m=0;m<M;m++){
         int x_j=-P;
         for(int j=0;j<N_out;j++, x_j+=S){
@@ -17,7 +17,7 @@ void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float 
                 for(int c=0;c<C;c++){
                     for(int f_j=0;f_j<K;f_j++){
                         for(int f_i=0;f_i<K;f_i++){
-                            int f_idx=m*(K*K*C)+f_i+(f_j*K)+c*(K*K);
+                            int f_idx=f_i+(f_j*K)+(c+m*C)*(K*K);
                             if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<N&&(x_i+f_i)<N){
                                 int x_idx= c*N*N+(x_j+f_j)*N+(x_i+f_i);                            
                                 sum+=Weights[f_idx]*X[x_idx];

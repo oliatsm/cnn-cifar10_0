@@ -16,9 +16,7 @@ int load_data(int n,int m,float *data_array, char * file_name){
     for(int i=0;i<n*n*m;i++){
         fscanf(fp,"%d",&number);
         data_array[i]=number;
-        // printf("%d ",number);
     }
-    // printf(".\n");
 
     fclose(fp);
     return 0;

@@ -7,7 +7,7 @@
 
 #include "layers.h"
 
-#define NUM_IMAGES 50000//Number of Input Data
+#define NUM_IMAGES NUM_IMG//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -22,9 +22,6 @@
 // Folder for .bin files of cifar dataset on my system.
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
-inline float get_image_pixel(float *image,int width,int height,int channel){
-    return image[((height*IMAGE_HEIGHT)+width)+(IMAGE_WIDTH*IMAGE_HEIGHT)*channel];
-}
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
 int load_data(float **image, int * label, int N) {
     
@@ -237,8 +234,10 @@ int main(){
     assert(O1!=NULL);
 
     t1 = clock();
-    for(int i=0;i<NUM_IMAGES;i++)
+    for(int i=0;i<NUM_IMAGES;i++){
+        printf("conv for image %d\n",i);
         convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
+        }
     t2 = clock();
     
     arr2txt(O1,N1,M1,"O1.txt");
