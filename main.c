@@ -5,9 +5,11 @@
 #include <string.h>
 #include <time.h> 
 
+#include <openacc.h>
+
 #include "layers.h"
 
-#define NUM_IMAGES NUM_IMG//Number of Input Data
+#define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -119,8 +121,6 @@ void img2txt(float **image, int *label, int N) {
 }
 
 void arr2txt(float *arr, int N,int M, char * file_name) {
-// void arr2txt(int N,int M, char * file_name) {
-
     FILE *file = fopen(file_name, "w");
 
     if (file == NULL) {
@@ -206,49 +206,79 @@ void print_map(int n,int m,int f,float *x){
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    int N = NUM_IMAGES;
-    clock_t t1,t2; 
+    // clock_t t1,t2; 
  
-    float **input = (float **)malloc(N*sizeof(float *) + N*IMAGE_PIXELS*sizeof(float));
-    assert(input!=NULL);
+    // float **input = (float **)malloc(N*sizeof(float *) + N*IMAGE_PIXELS*sizeof(float));
+    // assert(input!=NULL);
 
-    input[0] = (float *)(input + N);
-    for (int j = 1; j < N; j++) {
-      input[j] = input[j-1] + IMAGE_PIXELS;
+    // input[0] = (float *)(input + N);
+    // for (int j = 1; j < N; j++) {
+    //   input[j] = input[j-1] + IMAGE_PIXELS;
+    // }
+    int labels[NUM_IMAGES];
+    float ** input =(float **)malloc(NUM_IMAGES*sizeof(float *));
+    for (int i = 0 ; i < NUM_IMAGES ; i++){
+        input[i]=(float*)malloc(sizeof(float)*IMAGE_PIXELS);
     }
 
-    int labels[N];
-        
-    load_data(input,labels,N);
+    load_data(input,labels,NUM_IMAGES);
 
-    //Weights
-    float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
-    assert(weights1!=NULL);
-    float * bias1=(float *)malloc(sizeof(float)*M1);
-     assert(bias1!=NULL);
-    
-    load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
-    
-    //Test First Convolution Layer
-    float * O1 =malloc(sizeof(float)*N1*N1*M1);
-    assert(O1!=NULL);
+// #pragma acc enter data copyin (input[:NUM_IMAGES])
+//     for (int i = 0 ; i < NUM_IMAGES ; i++){
+// #pragma acc enter data copyin (input[i][:IMAGE_PIXELS])
+//     }
 
-    t1 = clock();
-    for(int i=0;i<NUM_IMAGES;i++){
-        printf("conv for image %d\n",i);
-        convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
+
+// #pragma acc parallel loop present(input)
+    for (int i=0;i<NUM_IMAGES;i++){
+        for (int j=0;j<IMAGE_PIXELS;j++){
+            input[i][j]+=1;
         }
-    t2 = clock();
+    }
+// for (int i=0;i<NUM_IMAGES;i++){
+//     #pragma acc update self(input[i][:IMAGE_PIXELS])
+// }
+    for (int i=0;i<NUM_IMAGES;i+=5000){
+        for (int j=0;j<IMAGE_PIXELS;j+=100){
+            printf("%f\n",input[i][j]);
+        }
+    }
+
     
-    arr2txt(O1,N1,M1,"O1.txt");
 
-    printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-    free(O1);
+    // //Weights
+    // float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
+    // assert(weights1!=NULL);
+    // float * bias1=(float *)malloc(sizeof(float)*M1);
+    //  assert(bias1!=NULL);
+    
+    // load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
+    
+    // //Test First Convolution Layer
+    // float * O1 =malloc(sizeof(float)*N1*N1*M1);
+    // assert(O1!=NULL);
 
-    free(bias1);
-    free(weights1);
+    // t1 = clock();
+    // for(int i=0;i<NUM_IMAGES;i++){
+    //     printf("conv for image %d\n",i);
+    //     convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
+    //     }
+    // t2 = clock();
+    
+    // arr2txt(O1,N1,M1,"O1.txt");
 
+    // printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+    // free(O1);
+
+    // free(bias1);
+    // free(weights1);
+
+    for(int i=0;i<NUM_IMAGES;i++){
+        free(input[i]);
+// #pragma acc exit data delete(input[i])
+    }
     free(input);
+// #pragma acc exit data delete(input)
     printf("END!\n");
 
     return 0;
