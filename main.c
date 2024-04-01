@@ -223,21 +223,21 @@ int main(){
 
     load_data(input,labels,NUM_IMAGES);
 
-#pragma acc enter data copyin (input[:NUM_IMAGES])
-    for (int i = 0 ; i < NUM_IMAGES ; i++){
-#pragma acc enter data copyin (input[i][:IMAGE_PIXELS])
-    }
+// #pragma acc enter data copyin (input[:NUM_IMAGES])
+//     for (int i = 0 ; i < NUM_IMAGES ; i++){
+// #pragma acc enter data copyin (input[i][:IMAGE_PIXELS])
+//     }
 
 
-#pragma acc parallel loop present(input)
+// #pragma acc parallel loop present(input)
     for (int i=0;i<NUM_IMAGES;i++){
         for (int j=0;j<IMAGE_PIXELS;j++){
             input[i][j]+=1;
         }
     }
-for (int i=0;i<NUM_IMAGES;i++){
-    #pragma acc update self(input[i][:IMAGE_PIXELS])
-}
+// for (int i=0;i<NUM_IMAGES;i++){
+//     #pragma acc update self(input[i][:IMAGE_PIXELS])
+// }
     for (int i=0;i<NUM_IMAGES;i+=5000){
         for (int j=0;j<IMAGE_PIXELS;j+=100){
             printf("%f\n",input[i][j]);
