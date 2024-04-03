@@ -2,6 +2,19 @@
 #define LAYERS_H
 
 #include <stdio.h>
+// Input Data
+#define NUM_IMG 1 //Number of images
+#define N_in 5//Input Width-Height
+#define C_in 3//Colour Chanels
+
+//Layer 1 : Convolutional
+// in[32][32][3],out[32][32][16]
+//     Filters[5][5][3]x(16), stride:1,pad:2
+#define K1 3 //Filter Width Height
+#define S1 2 //Stride
+#define P1 1 //Padding
+//Layer 1 Output
+#define M1 2 //Output number of Feature Maps 
 
 typedef struct conv_layer {
     int in_width;
@@ -21,12 +34,9 @@ typedef struct conv_layer {
     float *weights;
     float *bias;
 
-
 }ConvLayer;
 
-
 ConvLayer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P);
-void print_conv_layer(ConvLayer * layer);
-
+void convLayer_forward(float* restrict X,ConvLayer * l,float* restrict Y);
 
 #endif

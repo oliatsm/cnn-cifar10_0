@@ -47,7 +47,7 @@ void arr2txt(float *arr, int N,int M, char * file_name) {
     fclose(file);
 }
 
-i
+
 void print_map(int n,int m,int f,float *x){
 
     for(int l=0;l<f;l++){
