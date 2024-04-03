@@ -10,7 +10,7 @@
 #include "layers.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 50000//Number of Input Data
+#define NUM_IMAGES 5//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -157,36 +157,36 @@ int main(){
     load_data(input,labels,NUM_IMAGES);
     #pragma acc update device (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
-    #pragma acc parallel loop present(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
-    for (int i=0;i<NUM_IMAGES;i++){
-        for (int j=0;j<IMAGE_PIXELS;j++){
-            input[i][j]+=1;
-        }
-    }
-    #pragma acc update self (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+    // #pragma acc parallel loop present(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+    // for (int i=0;i<NUM_IMAGES;i++){
+    //     for (int j=0;j<IMAGE_PIXELS;j++){
+    //         input[i][j]+=1;
+    //     }
+    // }
+    // #pragma acc update self (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
-    for (int i=0;i<NUM_IMAGES;i+=5000){
-        for (int j=0;j<IMAGE_PIXELS;j+=100){
-            printf("%f\n",input[i][j]);
-    }}
+    // for (int i=0;i<NUM_IMAGES;i+=5000){
+    //     for (int j=0;j<IMAGE_PIXELS;j+=100){
+    //         printf("%f\n",input[i][j]);
+    // }}
 
 
     // //Weights
-    float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
+    float* restrict weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
     assert(weights1!=NULL);
 
-    float * bias1=(float *)malloc(sizeof(float)*M1);
+    float* restrict bias1=(float *)malloc(sizeof(float)*M1);
      assert(bias1!=NULL);
     
     load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
     
     //Test First Convolution Layer
-    float * O1 =malloc(sizeof(float)*N1*N1*M1);
+    float* restrict O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
 
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
-        printf("conv for image %d\n",i);
+        // printf("conv for image %d\n",i);
         convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
         }
     t2 = clock();
