@@ -6,8 +6,9 @@
 #include <time.h> 
 
 #include "layers.h"
+#include "malloc2D.h"
 
-#define NUM_IMAGES NUM_IMG//Number of Input Data
+#define NUM_IMAGES 5//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -23,7 +24,7 @@
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
-int load_data(float **image, int * label, int N) {
+int load_data(float** image, int * label, int N) {
     
     //Find how many batches I need and how many extra samples
     int batches = (N/MAX_BATCH_DATA)+1; 
@@ -58,6 +59,7 @@ int load_data(float **image, int * label, int N) {
                 image[n][j] = (float)data[data_i++]/255.0-0.5;
             }
             n++;
+            //printf("%d ",n);
         }
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
@@ -93,53 +95,6 @@ int load_data(float **image, int * label, int N) {
     }assert(n==N);
 
     return 0;
-}
-
-void img2txt(float **image, int *label, int N) {
-    FILE *file = fopen("image.txt", "w");
-
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        return;
-    }
-
-    for (int n = 0; n < N; n+=5000) {
-        // fprintf(file, "%d: %d \n",n,label[n]);
-        for (int k = 0; k < 3; ++k) {
-            for (int j = 0; j < 32; ++j) {
-                for (int i = 0; i < 32; ++i) {
-                    fprintf(file, "%.4f ", image[n][((j*32)+i)+1024*k]);
-                }
-                fprintf(file, "\n");
-            }
-        }
-    }
-
-    fclose(file);
-}
-
-void arr2txt(float *arr, int N,int M, char * file_name) {
-// void arr2txt(int N,int M, char * file_name) {
-
-    FILE *file = fopen(file_name, "w");
-
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        return;
-    }
-    fprintf(file,"%d,%d,%d\n",N,N,M);
-    for (int k = 0; k < M; ++k) {
-        for (int j = 0; j < N; ++j) {
-            for (int i = 0; i < N; ++i) {
-                int idx = ((j*N)+i)+(N*N)*k;
-                fprintf(file, "%f ", arr[idx]);
-                // printf("%d\n",idx);
-            }
-            fprintf(file, "\n");
-        }
-    }
-
-    fclose(file);
 }
 
 int load_weights(float * w,float * b ,char * file_name){
@@ -187,28 +142,14 @@ int load_weights(float * w,float * b ,char * file_name){
     return 0;
 }
 
-void print_map(int n,int m,int f,float *x){
-
-    for(int l=0;l<f;l++){
-        for(int i=0;i<n;i++){
-            for(int j=0;j<n;j++){
-                for(int k=0;k<m;k++){
-                    int idx=i+(n*j)+(n*n)*k+(n*n*m)*l;
-                    printf("%f \n",x[idx]);
-                }
-                // putchar('\n');
-            }
-            // putchar('\n');
-        }
-        // putchar('\n');
-    }
-}
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    int N = NUM_IMAGES;
     clock_t t1,t2; 
- 
+
+    int labels[NUM_IMAGES];
+    
+    float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
     float **input = (float **)malloc(N*sizeof(float *) + N*IMAGE_PIXELS*sizeof(float));
     assert(input!=NULL);
 
@@ -223,24 +164,27 @@ int main(){
 
     //Weights
     float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
+    // //Weights
+    float* restrict weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
     assert(weights1!=NULL);
-    float * bias1=(float *)malloc(sizeof(float)*M1);
+
+    float* restrict bias1=(float *)malloc(sizeof(float)*M1);
      assert(bias1!=NULL);
     
     load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
     
     //Test First Convolution Layer
-    float * O1 =malloc(sizeof(float)*N1*N1*M1);
+    float* restrict O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
 
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
-        printf("conv for image %d\n",i);
+        // printf("conv for image %d\n",i);
         convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
         }
     t2 = clock();
     
-    arr2txt(O1,N1,M1,"O1.txt");
+    // arr2txt(O1,N1,M1,"O1.txt");
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     free(O1);

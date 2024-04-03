@@ -4,7 +4,8 @@
 
 #include "layers.h"
 
-void convLayer_forward(int N,int C, float* X,int M, int K, float* Weights,float *bias, int N_out,float* Y,int S,int P) {
+void convLayer_forward(int N,int C, float* restrict X,int M, int K, float* restrict Weights,
+                                float* restrict bias, int N_out,float* restrict Y,int S,int P) {
     
     for(int m=0;m<M;m++){
         int x_j=-P;
