@@ -8,6 +8,7 @@
 #include <openacc.h>
 
 #include "layers.h"
+#include "malloc2D.h"
 
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
@@ -25,7 +26,7 @@
 const char *DATA_FOLDER = "../cifar-10-batches-bin";
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
-int load_data(float **image, int * label, int N) {
+int load_data(float** image, int * label, int N) {
     
     //Find how many batches I need and how many extra samples
     int batches = (N/MAX_BATCH_DATA)+1; 
@@ -60,6 +61,7 @@ int load_data(float **image, int * label, int N) {
                 image[n][j] = (float)data[data_i++]/255.0-0.5;
             }
             n++;
+            //printf("%d ",n);
         }
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
@@ -97,81 +99,108 @@ int load_data(float **image, int * label, int N) {
     return 0;
 }
 
+int load_weights(float * w,float * b ,char * file_name){
+    printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",M1,K1,K1,C_in);
+
+    int filter_width, filter_height, depth, filters;
+    
+    FILE *fin = fopen(file_name, "r");
+    if (fin == NULL) {
+        printf("Error opening file!\n");
+        return 1;
+    }
+
+    fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
+    printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
+    assert(filter_width==K1);
+    assert(filter_height==K1);
+    assert(depth==C_in);
+    assert(filters==M1);
+
+    double val;
+    for(int f = 0; f < filters; f++) {
+        for (int i = 0; i < filter_width; i++) {
+            for (int j = 0; j < filter_height; j++) {
+                for (int d = 0; d < depth; d++) {
+                    fscanf(fin, "%lf", &val);
+                    int idx=i+j*K1+(d+f*C_in)*(K1*K1);
+                    w[idx]=(float)val;
+                    // printf("%d, %lf->%f\n",idx,val,w[idx]);
+                }
+            }
+        }
+
+    }
+
+    for(int d = 0; d < M1; d++) {
+        fscanf(fin, "%lf", &val);
+        int idx=d;
+        b[idx]=(float)val;
+        // printf("%d\n",idx);
+    }
+
+    fclose(fin);
+    
+    return 0;
+}
+
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    // clock_t t1,t2; 
- 
-    // float **input = (float **)malloc(N*sizeof(float *) + N*IMAGE_PIXELS*sizeof(float));
-    // assert(input!=NULL);
+    clock_t t1,t2; 
 
-    // input[0] = (float *)(input + N);
-    // for (int j = 1; j < N; j++) {
-    //   input[j] = input[j-1] + IMAGE_PIXELS;
-    // }
     int labels[NUM_IMAGES];
-    float ** input =(float **)malloc(NUM_IMAGES*sizeof(float *));
-    for (int i = 0 ; i < NUM_IMAGES ; i++){
-        input[i]=(float*)malloc(sizeof(float)*IMAGE_PIXELS);
-    }
+    
+    float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
+    #pragma acc enter data create(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
     load_data(input,labels,NUM_IMAGES);
+    #pragma acc update device (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
-#pragma acc enter data copyin (input[:NUM_IMAGES])
-    for (int i = 0 ; i < NUM_IMAGES ; i++){
-#pragma acc enter data copyin (input[i][:IMAGE_PIXELS])
-    }
-
-
-#pragma acc parallel loop present(input)
+    #pragma acc parallel loop present(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     for (int i=0;i<NUM_IMAGES;i++){
         for (int j=0;j<IMAGE_PIXELS;j++){
             input[i][j]+=1;
         }
     }
-for (int i=0;i<NUM_IMAGES;i++){
-    #pragma acc update self(input[i][:IMAGE_PIXELS])
-}
+    #pragma acc update self (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+
     for (int i=0;i<NUM_IMAGES;i+=5000){
         for (int j=0;j<IMAGE_PIXELS;j+=100){
             printf("%f\n",input[i][j]);
-        }
-    }
+    }}
 
-    
 
     // //Weights
-    // float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
-    // assert(weights1!=NULL);
-    // float * bias1=(float *)malloc(sizeof(float)*M1);
-    //  assert(bias1!=NULL);
-    
-    // load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
-    
-    // //Test First Convolution Layer
-    // float * O1 =malloc(sizeof(float)*N1*N1*M1);
-    // assert(O1!=NULL);
+    float *weights1=malloc(sizeof(float)*(M1*C_in*K1*K1));
+    assert(weights1!=NULL);
 
-    // t1 = clock();
-    // for(int i=0;i<NUM_IMAGES;i++){
-    //     printf("conv for image %d\n",i);
-    //     convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
-    //     }
-    // t2 = clock();
+    float * bias1=(float *)malloc(sizeof(float)*M1);
+     assert(bias1!=NULL);
+    
+    load_weights(weights1,bias1,"./snapshot/layer1_conv.txt");
+    
+    //Test First Convolution Layer
+    float * O1 =malloc(sizeof(float)*N1*N1*M1);
+    assert(O1!=NULL);
+
+    t1 = clock();
+    for(int i=0;i<NUM_IMAGES;i++){
+        printf("conv for image %d\n",i);
+        convLayer_forward(N_in,C_in,input[i],M1,K1,weights1,bias1,N1,O1,S1,P1);
+        }
+    t2 = clock();
     
     // arr2txt(O1,N1,M1,"O1.txt");
 
-    // printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-    // free(O1);
+    printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+    free(O1);
 
-    // free(bias1);
-    // free(weights1);
+    free(bias1);
+    free(weights1);
 
-    for(int i=0;i<NUM_IMAGES;i++){
-        free(input[i]);
-#pragma acc exit data delete(input[i])
-    }
-#pragma acc exit data delete(input)
+    #pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+
     free(input);
     printf("END!\n");
 

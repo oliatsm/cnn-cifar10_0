@@ -47,51 +47,7 @@ void arr2txt(float *arr, int N,int M, char * file_name) {
     fclose(file);
 }
 
-int load_weights(float * w,float * b ,char * file_name){
-    printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",M1,K1,K1,C_in);
-
-    int filter_width, filter_height, depth, filters;
-    
-    FILE *fin = fopen(file_name, "r");
-    if (fin == NULL) {
-        printf("Error opening file!\n");
-        return 1;
-    }
-
-    fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
-    printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
-    assert(filter_width==K1);
-    assert(filter_height==K1);
-    assert(depth==C_in);
-    assert(filters==M1);
-
-    double val;
-    for(int f = 0; f < filters; f++) {
-        for (int i = 0; i < filter_width; i++) {
-            for (int j = 0; j < filter_height; j++) {
-                for (int d = 0; d < depth; d++) {
-                    fscanf(fin, "%lf", &val);
-                    int idx=i+j*K1+(d+f*C_in)*(K1*K1);
-                    w[idx]=(float)val;
-                    // printf("%d, %lf->%f\n",idx,val,w[idx]);
-                }
-            }
-        }
-
-    }
-
-    for(int d = 0; d < M1; d++) {
-        fscanf(fin, "%lf", &val);
-        int idx=d;
-        b[idx]=(float)val;
-        // printf("%d\n",idx);
-    }
-
-    fclose(fin);
-    
-    return 0;
-}
-
+i
 void print_map(int n,int m,int f,float *x){
 
     for(int l=0;l<f;l++){
