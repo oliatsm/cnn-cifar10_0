@@ -9,6 +9,7 @@
         in[32][32][16],out[32][32][16]
 * 3.Pool Layer:
         in[32][32][16],out[16][16][16]
+        pooling(2,2),stride:2,pad:0
 * 4.Convolutional Layer:
         in[16][16][16],out[16][16][20]
         Filters[5][5][16]x(20), stride:1,pad:2
@@ -16,6 +17,7 @@
         in[16][16][20],out[16][16][20]
 * 6.Pool Layer:
         in[16][16][20],out[8][8][20]
+        pooling(2,2),stride:2,pad:0
 * 7.Convolutional Layer:
         in[8][8][20],out[8][8][20]
         Filters[5][5][20]x(20), stride:1,pad:2
@@ -23,6 +25,7 @@
         in[8][8][20],out[8][8][20]
 * 9.Pool Layer:
         in[8][8][20],out[4][4][20]
+        pooling(2,2),stride:2,pad:0
 * 10.Fully Connected Layer:
         in[4][4][20],out[1][1][10]
 * 11.Softmax Layer:
