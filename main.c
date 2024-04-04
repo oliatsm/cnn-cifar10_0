@@ -127,7 +127,7 @@ int main(){
     load_conv(L7,"./snapshot/layer7_conv.txt");
     load_fc(L10,"./snapshot/layer10_fc.txt");
 
-    arr2txt(L10->weights,1,L10->in_neurons*L10->out_depth,"L10-weights.txt");
+    // arr2txt(L10->weights,1,L10->in_neurons*L10->out_depth,"L10-weights.txt");
 
     
     //Test First Convolution Layer
@@ -170,6 +170,7 @@ int main(){
     //     }
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+    free(O10);
     free(O9);    
     free(O8);
     free(O7);
@@ -180,6 +181,10 @@ int main(){
     free(O3);    
     free(O2);
     free(O1);
+
+    free(L10->bias);
+    free(L10->weights);
+    free(L10);
 
     free(L9);
     free(L8);

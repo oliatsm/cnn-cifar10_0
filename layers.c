@@ -139,7 +139,6 @@ void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
 FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
     FC_Layer * layer = malloc(sizeof(FC_Layer));
 
-    //TODO
     layer->in_neurons = W*H*D;
     layer->in_width=W;
     layer->in_height=H;
@@ -162,7 +161,6 @@ void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y){
             for(int j = 0; j < l->in_neurons; j++) {
                 int w_idx= j+ i*l->in_neurons;
                 dot += X[j]*l->weights[w_idx];
-                printf("(%d,%d) %f * %f\n",i,j,X[j],l->weights[w_idx]);
             }
             dot += l->bias[i];
             Y[i] = dot;
@@ -207,7 +205,6 @@ int load_conv(Conv_Layer* l ,char * file_name){
         fscanf(fin, "%lf", &val);
         int idx=d;
         l->bias[idx]=(float)val;
-        // printf("%d\n",idx);
     }
 
     fclose(fin);
