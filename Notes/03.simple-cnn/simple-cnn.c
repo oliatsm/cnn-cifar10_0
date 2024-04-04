@@ -64,13 +64,18 @@ int main() {
     L1->bias[0]=1;
     L1->bias[1]=0;
 
-    float * O1=(float *)malloc(sizeof(float)*M1*L1->out_width*L1->filter_height);
+    float * O1=(float *)malloc(sizeof(float)*L1->out_height*L1->out_width*L1->out_depth);
     if (O1 == NULL) {
         printf("Memory allocation failed for O1\n");
         return 1;
     }
     // printf("Conv: X[%d][%d][%d],W[%d][%d][%d],Y[%d][%d][%d]\n",
     //                 N_in,N_in,C_in,K1,K1,C_in,N1,N1,M1);
+
+    PoolLayer *L2 =make_pool_layer(N_in,N_in,C_in,2,2,1);
+    float * O2=(float *)malloc(sizeof(float)*L2->out_height*L2->out_width*L2->out_depth);
+
+    
     
 
 for(int i=0;i<NUM_IMG;i++){
@@ -78,12 +83,19 @@ for(int i=0;i<NUM_IMG;i++){
     print_map(Input,N_in,N_in,C_in);
     printf("\n");
 
-    convLayer_forward(Input,L1,O1);
+    // convLayer_forward(Input,L1,O1);
+    pool_forward(Input,L2,O2);
     printf("O1:\n");
-    print_map(O1,L1->out_width,L1->out_height,M1);
+    // print_map(O1,L1->out_width,L1->out_height,M1);
+        print_map(O2,L2->out_width,L2->out_height,L2->out_depth);
+
     printf("\n");
 }
 
+    free(L2);
+    free(L1->bias);
+    free(L1->weights);
+    free(L1);
     free(Input);
     free(O1);
     

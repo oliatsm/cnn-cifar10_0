@@ -104,8 +104,8 @@ PoolLayer * make_pool_layer(int W, int H, int D,int K, int S, int P){
     layer->stride=S;
     layer->padding=P;
 
-    layer->out_width=floor((W-K)/S+1);
-    layer->out_height=floor((H-K)/S+1);
+    layer->out_width=floor((W-K+2*P)/S+1);
+    layer->out_height=floor((H-K+2*P)/S+1);
     layer->out_depth=D;
 
     return layer;
@@ -122,7 +122,7 @@ void pool_forward(float * restrict X, PoolLayer * l,float * restrict Y){
                 for(int p_j=0;p_j<l->pool_width;p_j++){
                     for(int p_i=0;p_i<l->pool_width;p_i++){
                         int x_idx = (x_i+p_i) + ((x_j+p_j)+m*l->in_height)*l->in_width;
-                        if((x_i+p_i)>0&&(x_j+p_j)>0&&(x_i+p_i)<l->in_width&&(x_j+p_j)<l->in_height){
+                        if((x_i+p_i)>=0&&(x_j+p_j)>=0&&(x_i+p_i)<l->in_width&&(x_j+p_j)<l->in_height){
                             if(X[x_idx]>max){
                                 max=X[x_idx];
                             }
