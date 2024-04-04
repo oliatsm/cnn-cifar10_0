@@ -35,7 +35,7 @@ typedef struct conv_layer {
     float *weights;
     float *bias;
 
-}ConvLayer;
+}Conv_Layer;
 
 typedef struct relu_layer {
     int in_width;
@@ -46,7 +46,7 @@ typedef struct relu_layer {
     int out_height;
     int out_depth;
 
-}ReluLayer;
+}ReLU_Layer;
 
 typedef struct pool_layer {
     int in_width;
@@ -61,15 +61,15 @@ typedef struct pool_layer {
     int out_height;
     int out_depth;
 
-}PoolLayer;
+}Pool_Layer;
 
-ConvLayer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P);
-ReluLayer * make_relu_layer(int W, int H, int D);
-PoolLayer * make_pool_layer(int W, int H, int D,int K, int S, int P);
+Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P);
+ReLU_Layer * make_relu_layer(int W, int H, int D);
+Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P);
 
-void convLayer_forward(float* restrict X,ConvLayer * l,float* restrict Y);
-void relu_forward(float* restrict X,ReluLayer * l,float * restrict Y);
-void pool_forward(float * restrict X, PoolLayer * l,float * restrict Y);
+void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y);
+void relu_forward(float* restrict X,ReLU_Layer * l,float * restrict Y);
+void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y);
 
 
 #endif

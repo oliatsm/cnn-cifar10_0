@@ -10,9 +10,9 @@
 
 //W: input Width, H: input height, D: input depth, K: filter width and height
 // M: output feature maps, S: stride, P: zerro padding
-ConvLayer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
+Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     
-    ConvLayer *layer=malloc(sizeof(ConvLayer));
+    Conv_Layer *layer=malloc(sizeof(Conv_Layer));
 
     layer->in_width=W;
     layer->in_height=H;
@@ -42,7 +42,7 @@ ConvLayer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     return layer;
 }
 
-void convLayer_forward(float* restrict X,ConvLayer * l,float* restrict Y) {
+void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
     
     for(int m=0;m<l->out_depth;m++){
         int x_j=-l->padding;
@@ -70,8 +70,8 @@ void convLayer_forward(float* restrict X,ConvLayer * l,float* restrict Y) {
     }
 }
 
-ReluLayer * make_relu_layer(int W, int H, int D){
-    ReluLayer * layer=malloc(sizeof(ReluLayer));
+ReLU_Layer * make_relu_layer(int W, int H, int D){
+    ReLU_Layer * layer=malloc(sizeof(ReLU_Layer));
 
     layer->in_width=W;
     layer->in_height=H;
@@ -84,7 +84,7 @@ ReluLayer * make_relu_layer(int W, int H, int D){
     return layer;
 }
 
-void relu_forward(float* restrict X,ReluLayer * l,float * restrict Y){
+void relu_forward(float* restrict X,ReLU_Layer * l,float * restrict Y){
 
     int size = l->out_depth*l->in_height*l->in_width;
     for(int i=0;i<size;i++){
@@ -92,8 +92,8 @@ void relu_forward(float* restrict X,ReluLayer * l,float * restrict Y){
     }
 }
 
-PoolLayer * make_pool_layer(int W, int H, int D,int K, int S, int P){
-    PoolLayer * layer = malloc(sizeof(PoolLayer));
+Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
+    Pool_Layer * layer = malloc(sizeof(Pool_Layer));
 
     layer->in_width=W;
     layer->in_height=H;
@@ -111,7 +111,7 @@ PoolLayer * make_pool_layer(int W, int H, int D,int K, int S, int P){
     return layer;
 }
 
-void pool_forward(float * restrict X, PoolLayer * l,float * restrict Y){
+void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
     for(int m=0;m<l->out_depth;m++){
         int x_j=-l->padding;
         for(int j=0;j<l->out_height;x_j+=l->stride,j++){
@@ -134,3 +134,8 @@ void pool_forward(float * restrict X, PoolLayer * l,float * restrict Y){
         }
     }
 }
+
+typedef struct fc_layer {
+
+
+} FC_Layer;
