@@ -95,51 +95,6 @@ int load_data(float** image, int * label, int N) {
     return 0;
 }
 
-int load_weights(Conv_Layer* l ,char * file_name){
-    printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",
-            l->num_filters,l->filter_width,l->filter_height,l->in_depth);
-
-    int filter_width, filter_height, depth, filters;
-    
-    FILE *fin = fopen(file_name, "r");
-    if (fin == NULL) {
-        printf("Error opening file!\n");
-        return 1;
-    }
-
-    fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
-
-    assert(filter_width==l->filter_width);
-    assert(filter_height==l->filter_height);
-    assert(depth==l->in_depth);
-    assert(filters==l->num_filters);
-
-    double val;
-    for(int f = 0; f < filters; f++) {
-        for (int i = 0; i < filter_width; i++) {
-            for (int j = 0; j < filter_height; j++) {
-                for (int d = 0; d < depth; d++) {
-                    fscanf(fin, "%lf", &val);
-                    int idx=i+j*filter_width+(d+f*depth)*(filter_width*filter_height);
-                    l->weights[idx]=(float)val;
-                    //printf("%d, %lf->%f\n",idx,val,l->weights[idx]);
-                }
-            }
-        }
-
-    }
-
-    for(int d = 0; d < filters; d++) {
-        fscanf(fin, "%lf", &val);
-        int idx=d;
-        l->bias[idx]=(float)val;
-        // printf("%d\n",idx);
-    }
-
-    fclose(fin);
-    
-    return 0;
-}
 
 void arr2txt(float *arr, int N,int M, char * file_name);
 
@@ -163,11 +118,18 @@ int main(){
     Conv_Layer * L7 = make_conv_layer(L6->out_width,L6->out_height,L6->out_depth,5,20,1,2);
     ReLU_Layer * L8 = make_relu_layer(L7->out_width,L7->out_height,L7->out_depth);
     Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,2,2,0);
-    
-    load_weights(L1,"./snapshot/layer1_conv.txt");
-    load_weights(L4,"./snapshot/layer4_conv.txt");
-    load_weights(L7,"./snapshot/layer7_conv.txt");
+    FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,10);
 
+    printf("%d,%d,%d ->%d,%d\n",L10->in_width,L10->in_height,L10->in_depth,L10->in_neurons,L10->out_depth);
+    
+    load_conv(L1,"./snapshot/layer1_conv.txt");
+    load_conv(L4,"./snapshot/layer4_conv.txt");
+    load_conv(L7,"./snapshot/layer7_conv.txt");
+    load_fc(L10,"./snapshot/layer10_fc.txt");
+
+    arr2txt(L10->weights,1,L10->in_neurons*L10->out_depth,"L10-weights.txt");
+
+    
     //Test First Convolution Layer
     float* restrict O1 =malloc(sizeof(float)*N1*N1*M1);
     float* restrict O2 =malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
@@ -178,6 +140,8 @@ int main(){
     float* restrict O7 =malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
     float* restrict O8 =malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
     float* restrict O9 =malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
+    float* restrict O10 =malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
+
 
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
@@ -191,6 +155,7 @@ int main(){
         conv_forward(O6,L7,O7);
         relu_forward(O7,L8,O8);
         pool_forward(O8,L9,O9);
+        fc_forward(O9,L10,O10);
 
         }
     t2 = clock();
@@ -198,7 +163,7 @@ int main(){
     // arr2txt(O1,N1,M1,"O1_1.txt");
     // arr2txt(O2,N1,M1,"O2_1.txt");
     // arr2txt(O3,L3->out_width,L3->out_depth,"O3_1.txt");
-    arr2txt(O9,L9->out_width,L9->out_depth,"O9_1.txt");
+    arr2txt(O10,1,L10->out_depth,"O10_1.txt");
 
     // for(int i=0;i<(L1->out_height*L1->out_width*L1->out_depth);i++){
     //     printf("%f\n",O1[i]);

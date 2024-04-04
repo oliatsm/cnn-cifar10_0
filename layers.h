@@ -63,13 +63,34 @@ typedef struct pool_layer {
 
 }Pool_Layer;
 
+typedef struct fc_layer {
+    int in_width;
+    int in_height;
+    int in_depth;
+
+    int in_neurons;
+
+    int out_width;
+    int out_height;
+    int out_depth;
+
+    float * weights;
+    float * bias;
+
+}FC_Layer;
+
 Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P);
 ReLU_Layer * make_relu_layer(int W, int H, int D);
 Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P);
+FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons);//TODO
 
 void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y);
 void relu_forward(float* restrict X,ReLU_Layer * l,float * restrict Y);
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y);
+void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y);//TODO
+
+int load_conv(Conv_Layer* l ,char * file_name);
+int load_fc(FC_Layer *l, const char *filename);
 
 
 #endif

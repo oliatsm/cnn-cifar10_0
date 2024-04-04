@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 
 #include "layers.h"
@@ -135,7 +136,116 @@ void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
     }
 }
 
-typedef struct fc_layer {
+FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
+    FC_Layer * layer = malloc(sizeof(FC_Layer));
 
+    //TODO
+    layer->in_neurons = W*H*D;
+    layer->in_width=W;
+    layer->in_height=H;
+    layer->in_depth=D;
 
-} FC_Layer;
+    layer->out_width=1;
+    layer->out_height=1;
+    layer->out_depth = num_neurons;
+
+    layer->weights = (float *) malloc(sizeof(float)*layer->in_neurons*layer->out_depth);
+    layer->bias    = (float *) malloc(sizeof(float)*layer->out_depth);
+
+    return layer;
+}
+
+void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y){
+
+    for(int i = 0; i < l->out_depth;i++) {
+            float dot = 0.0f;
+            for(int j = 0; j < l->in_neurons; j++) {
+                int w_idx= j+ i*l->in_neurons;
+                dot += X[j]*l->weights[w_idx];
+                printf("(%d,%d) %f * %f\n",i,j,X[j],l->weights[w_idx]);
+            }
+            dot += l->bias[i];
+            Y[i] = dot;
+        }
+
+}
+
+int load_conv(Conv_Layer* l ,char * file_name){
+    printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",
+            l->num_filters,l->filter_width,l->filter_height,l->in_depth);
+
+    int filter_width, filter_height, depth, filters;
+    
+    FILE *fin = fopen(file_name, "r");
+    if (fin == NULL) {
+        printf("Error opening conv_layer file!\n");
+        return 1;
+    }
+
+    fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
+
+    assert(filter_width==l->filter_width);
+    assert(filter_height==l->filter_height);
+    assert(depth==l->in_depth);
+    assert(filters==l->num_filters);
+
+    double val;
+    for(int f = 0; f < filters; f++) {
+        for (int i = 0; i < filter_width; i++) {
+            for (int j = 0; j < filter_height; j++) {
+                for (int d = 0; d < depth; d++) {
+                    fscanf(fin, "%lf", &val);
+                    int idx=i+j*filter_width+(d+f*depth)*(filter_width*filter_height);
+                    l->weights[idx]=(float)val;
+                }
+            }
+        }
+
+    }
+
+    for(int d = 0; d < filters; d++) {
+        fscanf(fin, "%lf", &val);
+        int idx=d;
+        l->bias[idx]=(float)val;
+        // printf("%d\n",idx);
+    }
+
+    fclose(fin);
+    
+    return 0;
+}
+
+int load_fc(FC_Layer *l, const char *filename) {
+    FILE *fin = fopen(filename, "r");
+    if (fin == NULL) {
+        printf("Error opening fc_layer file!\n");
+        return 1;
+    }
+
+    int num_inputs;
+    int output_depth;
+    fscanf(fin, "%d %d", &num_inputs, &output_depth);
+    assert(output_depth == l->out_depth);
+    assert(num_inputs == l->in_neurons);
+
+    double val;//(l->filters[i]->weights[j])
+    for(int i = 0; i < l->out_depth; i++){  
+        // for(int j = 0; j < l->in_neurons; j++) {
+        //     int idx= j+ i*l->in_neurons;
+        for(int h=0;h<l->in_height;h++){
+            for(int w=0;w<l->in_width;w++){
+                for(int d=0;d<l->in_depth;d++){
+                    int idx = w+(h+d*l->in_height)*l->in_width+i*l->in_neurons;
+                    fscanf(fin, "%lf", &val);
+                    l->weights[idx]=(float)val;
+        }}}
+    }
+    for(int i = 0; i < l->out_depth; i++) {
+        fscanf(fin, "%lf", &val);
+        l->bias[i]=(float)val;
+    }
+
+    fclose(fin);
+
+    return 0;
+}
