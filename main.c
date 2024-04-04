@@ -10,7 +10,7 @@
 #include "layers.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 1//Number of Input Data
+#define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -108,7 +108,7 @@ int load_weights(ConvLayer * l ,char * file_name){
     }
 
     fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
-    printf("%d %d %d %d\n", filter_width, filter_height, depth, filters);
+
     assert(filter_width==l->filter_width);
     assert(filter_height==l->filter_height);
     assert(depth==l->in_depth);
@@ -156,6 +156,10 @@ int main(){
     // //Weights
     ConvLayer * L1 =make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReluLayer * L2 =make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
+    PoolLayer * L3 =make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,2,2,0);
+    printf("Pool: in[%d][%d][%d] out[%d][%d][%d]\n",L3->in_width,L3->in_height,L3->in_depth,
+        L3->out_width,L3->out_height,L3->out_depth);
+    printf("    f[%d][%d] S:%d,P:%d\n",L3->pool_width,L3->stride,L3->padding);
     
     load_weights(L1,"./snapshot/layer1_conv.txt");
     // for(int i=0;i<K1*K1*C_in*M1;i++){
@@ -165,31 +169,41 @@ int main(){
     float* restrict O1 =malloc(sizeof(float)*N1*N1*M1);
     assert(O1!=NULL);
     float* restrict O2 =malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
-
+    assert(O2!=NULL);
+    float* restrict O3 =malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
+    assert(O3!=NULL);
+    for(int i=0;i<L3->out_width*L3->out_height*L3->out_depth;i++){
+        O3[i]=0.0f;
+    }
 
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
         // printf("conv for image %d\n",i);
         convLayer_forward(input[i],L1,O1);
         relu_forward(O1,L2,O2);
+        pool_forward(O2,L3,O3);
+
         }
     t2 = clock();
     // arr2txt(input[NUM_IMAGES-1],N_in,C_in,"In_50k.txt"); 
     arr2txt(O1,N1,M1,"O1_1.txt");
     arr2txt(O2,N1,M1,"O2_1.txt");
+    arr2txt(O3,L3->out_width,L3->out_depth,"O3_1.txt");
 
     // for(int i=0;i<(L1->out_height*L1->out_width*L1->out_depth);i++){
     //     printf("%f\n",O1[i]);
     //     }
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-    free(O1);
+    free(O3);    
     free(O2);
-    free(L1->weights);
-    free(L1->bias);
-    free(L1);
+    free(O1);
+    
+    free(L3);
     free(L2);
-
+    free(L1->bias);
+    free(L1->weights);
+    free(L1);
     free(input);
     printf("END!\n");
 
