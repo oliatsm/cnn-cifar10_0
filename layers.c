@@ -228,10 +228,8 @@ int load_fc(FC_Layer *l, const char *filename) {
     assert(output_depth == l->out_depth);
     assert(num_inputs == l->in_neurons);
 
-    double val;//(l->filters[i]->weights[j])
+    double val;
     for(int i = 0; i < l->out_depth; i++){  
-        // for(int j = 0; j < l->in_neurons; j++) {
-        //     int idx= j+ i*l->in_neurons;
         for(int h=0;h<l->in_height;h++){
             for(int w=0;w<l->in_width;w++){
                 for(int d=0;d<l->in_depth;d++){
