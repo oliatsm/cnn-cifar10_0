@@ -139,8 +139,31 @@ int main(){
     // FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
     // Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
     
+    //Test2: Add 1 to all Conv parameters on host, and load corrext data from device
+//*
+printf("L1:Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
+    L1->in_width,L1->in_height,L1->in_depth,L1->out_width,L1->out_height,L1->out_depth,
+    L1->filter_width,L1->filter_height,L1->num_filters,L1->stride,L1->padding);
+
+    L1->in_width++;L1->in_height++;L1->in_depth++;L1->out_width++;L1->out_height++;L1->out_depth++;
+    L1->filter_width++;L1->filter_height++;L1->num_filters++;L1->stride++;L1->padding++;
+#pragma acc update self(L1[0:1])
+printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
+    L1->in_width,L1->in_height,L1->in_depth,L1->out_width,L1->out_height,L1->out_depth,
+    L1->filter_width,L1->filter_height,L1->num_filters,L1->stride,L1->padding);
+//*/
+//Test2^  
     //Loading Layers' parameters
-    // load_conv(L1,"./snapshot/layer1_conv.txt");
+    load_conv(L1,"./snapshot/layer1_conv.txt");
+    int size = L1->filter_width*L1->filter_height*L1->num_filters*L1->in_depth;
+#pragma acc update device(L1->weights[0:size],L1->bias[0:L1->out_depth])
+//Test3: add 1 to Weights, then copy from the device the correct weights
+    for(int i=0;i<size;i++){
+        L1->weights[i]+=1;
+    }
+#pragma acc update self(L1->weights[0:size])
+    arr2txt(L1->weights,1,size,"L1-self.txt");
+//Test3^
     // load_conv(L4,"./snapshot/layer4_conv.txt");
     // load_conv(L7,"./snapshot/layer7_conv.txt");
     // load_fc(L10,"./snapshot/layer10_fc.txt");
