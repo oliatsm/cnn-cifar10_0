@@ -169,9 +169,7 @@ void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y){
 }
 
 int load_conv(Conv_Layer* l ,char * file_name){
-    printf("Loading Conv Layer 1 Weights\n %dx(%d,%d,%d)\n",
-            l->num_filters,l->filter_width,l->filter_height,l->in_depth);
-
+    
     int filter_width, filter_height, depth, filters;
     
     FILE *fin = fopen(file_name, "r");
@@ -213,6 +211,7 @@ int load_conv(Conv_Layer* l ,char * file_name){
 }
 
 int load_fc(FC_Layer *l, const char *filename) {
+    
     FILE *fin = fopen(filename, "r");
     if (fin == NULL) {
         printf("Error opening fc_layer file!\n");

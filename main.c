@@ -10,7 +10,7 @@
 #include "layers.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 1//Number of Input Data
+#define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -29,7 +29,7 @@ int load_data(float** image, int * label, int N) {
     int samples = N%MAX_BATCH_DATA;
     int n = 0;  //Image index
 
-    printf("Batches: %d, Samples: %d.\n",batches,samples);
+    // printf("Batches: %d, Samples: %d.\n",batches,samples);
     char file_name[1024];
     size_t LINE_SIZE = 3073;
     
@@ -101,6 +101,7 @@ void arr2txt(float *arr, int N,int M, char * file_name);
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     clock_t t1,t2; 
+    printf("CNN for %d images\n",NUM_IMAGES);
 
     int labels[NUM_IMAGES];
     
@@ -111,36 +112,36 @@ int main(){
     // Network Layers
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
-    Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,2,2,0);
-    Conv_Layer * L4 = make_conv_layer(L3->out_width,L3->out_height,L3->out_depth,5,20,1,2);
+    Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,K3,S3,P3);
+    Conv_Layer * L4 = make_conv_layer(L3->out_width,L3->out_height,L3->out_depth,K4,M4,S4,P4);
     ReLU_Layer * L5 = make_relu_layer(L4->out_width,L4->out_height,L4->out_depth);
-    Pool_Layer * L6 = make_pool_layer(L5->out_width,L5->out_height,L5->out_depth,2,2,0);
-    Conv_Layer * L7 = make_conv_layer(L6->out_width,L6->out_height,L6->out_depth,5,20,1,2);
+    Pool_Layer * L6 = make_pool_layer(L5->out_width,L5->out_height,L5->out_depth,K6,S6,P6);
+    Conv_Layer * L7 = make_conv_layer(L6->out_width,L6->out_height,L6->out_depth,K7,M7,S7,P7);
     ReLU_Layer * L8 = make_relu_layer(L7->out_width,L7->out_height,L7->out_depth);
-    Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,2,2,0);
-    FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,10);
+    Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,K9,S9,P9);
+    FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
     Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
-
-    printf("%d,%d,%d ->%d\n",L11->in_width,L11->in_height,L11->in_depth,L11->out_depth);
     
+    //Loading Layers' parameters
     load_conv(L1,"./snapshot/layer1_conv.txt");
     load_conv(L4,"./snapshot/layer4_conv.txt");
     load_conv(L7,"./snapshot/layer7_conv.txt");
     load_fc(L10,"./snapshot/layer10_fc.txt");
   
     //Allocate Outputs
-    float* restrict O1 =malloc(sizeof(float)*N1*N1*M1);
-    float* restrict O2 =malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
-    float* restrict O3 =malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
-    float* restrict O4 =malloc(sizeof(float)*L4->out_width*L4->out_height*L4->out_depth);
-    float* restrict O5 =malloc(sizeof(float)*L5->out_width*L5->out_height*L5->out_depth);
-    float* restrict O6 =malloc(sizeof(float)*L6->out_width*L6->out_height*L6->out_depth);
-    float* restrict O7 =malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
-    float* restrict O8 =malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
-    float* restrict O9 =malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
-    float* restrict O10 =malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
-    float* restrict O11 =malloc(sizeof(float)*L11->out_depth);
+    float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
+    float* restrict O2 = malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
+    float* restrict O3 = malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
+    float* restrict O4 = malloc(sizeof(float)*L4->out_width*L4->out_height*L4->out_depth);
+    float* restrict O5 = malloc(sizeof(float)*L5->out_width*L5->out_height*L5->out_depth);
+    float* restrict O6 = malloc(sizeof(float)*L6->out_width*L6->out_height*L6->out_depth);
+    float* restrict O7 = malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
+    float* restrict O8 = malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
+    float* restrict O9 = malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
+    float* restrict O10 = malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
+    float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_depth);
 
+    //Net Forward
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
 
@@ -154,17 +155,36 @@ int main(){
         relu_forward(O7,L8,O8);
         pool_forward(O8,L9,O9);
         fc_forward(O9,L10,O10);
-        softmax_forward(O10,L11,O11);
+        softmax_forward(O10,L11,O11[i]);
 
         }
     t2 = clock();
-    // arr2txt(input[NUM_IMAGES-1],N_in,C_in,"In_1.txt"); 
-    // arr2txt(O1,N1,M1,"O1_1.txt");
-    // arr2txt(O2,N1,M1,"O2_1.txt");
-    // arr2txt(O3,L3->out_width,L3->out_depth,"O3_1.txt");
-    // arr2txt(O11,1,L11->out_depth,"O11_1.txt");
+   
+    printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
-    printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+    // Results
+    int predictions[NUM_IMAGES];
+    for(int n=0;n<NUM_IMAGES;n++){
+        int class_o = 0;
+        float max_o = O11[n][0];
+        for(int i=1;i<L11->out_depth;i++){
+            if(max_o < O11[n][i]){
+                class_o = i;
+                max_o = O11[n][i];
+            }
+        }
+        predictions[n] = class_o;
+    }
+
+    //Network Accuracy
+    int correct_label=0;
+    for(int n=0;n<NUM_IMAGES;n++){
+        if(predictions[n]==labels[n]){
+            correct_label++;
+        }
+    }
+
+    printf("Net Accuracy: %.2f %% \n",100*(float)correct_label/NUM_IMAGES);
 
     free(O11);
     free(O10);
