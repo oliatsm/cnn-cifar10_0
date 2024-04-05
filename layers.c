@@ -14,6 +14,7 @@
 Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     
     Conv_Layer *layer=malloc(sizeof(Conv_Layer));
+#pragma acc enter data create(layer[0:1])
 
     layer->in_width=W;
     layer->in_height=H;
@@ -29,18 +30,40 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     layer->out_width=(W-K+2*P)/S+1;
     layer->out_height=(H-K+2*P)/S+1;
     layer->out_depth=M;
+// #pragma acc update device(layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth)
+// #pragma acc update device(layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding)
 
-    layer->weights=malloc(sizeof(float)*K*K*M*D);
-    for(int i=0;i<(K*K*M*D);i++){
-        layer->weights[i]=0.f;
-    }
+    int size = K*K*M*D;
+    layer->weights=malloc(sizeof(float)*size);
+#pragma acc enter data create(layer->weights[0:size])
 
     layer->bias=malloc(sizeof(float)*M);
-    for(int i=0;i<(M);i++){
-        layer->bias[i]=0.f;
-    }
-    
+#pragma acc enter data create(layer->bias[0:M])
+
+#pragma acc update device(layer[0:1])
+//Test1: Add 1 to all Conv parameters on host, and load corrext data from device
+printf("Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
+    layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth,
+    layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding);
+
+    layer->in_width++;layer->in_height++;layer->in_depth++;layer->out_width++;layer->out_height++;layer->out_depth++;
+    layer->filter_width++;layer->filter_height++;layer->num_filters++;layer->stride++;layer->padding++;
+#pragma acc update self(layer[0:1])
+printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
+    layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth,
+    layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding);
+//Test1^    
     return layer;
+}
+
+void free_conv(Conv_Layer * l){
+    int size = l->in_depth*l->in_height*l->in_width;
+// #pragma acc exit data delete(l->bias[0:l->out_depth])
+    free(l->bias);
+// #pragma acc exit data delete(l->weights[0:size])
+    free(l->weights);
+// #pragma acc exit data delete(l[0:1])
+    free(l);
 }
 
 void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {

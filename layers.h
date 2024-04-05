@@ -125,6 +125,8 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P);
 FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons);
 Softmax_Layer * make_softmax_layer(int W, int H, int D);
 
+void free_conv(Conv_Layer * l);
+
 
 void conv_forward(float* restrict X, Conv_Layer * l,float* restrict Y);
 void relu_forward(float* restrict X, ReLU_Layer * l,float * restrict Y);
