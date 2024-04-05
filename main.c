@@ -10,7 +10,7 @@
 #include "layers.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 1200//Number of Input Data
+#define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -106,9 +106,24 @@ int main(){
     int labels[NUM_IMAGES];
     
     float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
+    #pragma acc enter data create(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
     load_data(input,labels,NUM_IMAGES);
+    #pragma acc update device (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
+    #pragma acc parallel loop present(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+    for (int i=0;i<NUM_IMAGES;i++){
+        for (int j=0;j<IMAGE_PIXELS;j++){
+            input[i][j]+=1;
+        }
+    }
+    #pragma acc update self (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+
+    for (int i=0;i<NUM_IMAGES;i+=5000){
+        for (int j=0;j<IMAGE_PIXELS;j+=100){
+            printf("%f\n",input[i][j]);
+    }}
+/*
     // Network Layers
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
@@ -223,6 +238,8 @@ int main(){
     free(L1->bias);
     free(L1->weights);
     free(L1);
+    */
+    #pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     free(input);
     printf("END!\n");
 
