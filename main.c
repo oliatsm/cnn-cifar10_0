@@ -158,7 +158,7 @@ printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
     int size = L1->filter_width*L1->filter_height*L1->num_filters*L1->in_depth;
 #pragma acc update device(L1->weights[0:size],L1->bias[0:L1->out_depth])
 //Test3: add 1 to Weights, then copy from the device the correct weights
-// #pragma acc parallel loop
+#pragma acc parallel loop
     for(int i=0;i<size;i++){
         L1->weights[i]+=1;
     }
