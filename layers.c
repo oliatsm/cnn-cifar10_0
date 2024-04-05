@@ -244,3 +244,45 @@ int load_fc(FC_Layer *l, const char *filename) {
 
     return 0;
 }
+
+Softmax_Layer * make_softmax_layer(int W, int H, int D){
+
+    Softmax_Layer * layer = malloc(sizeof(Softmax_Layer));
+    layer->in_width = W;
+    layer->in_height = H;
+    layer->in_depth = D;
+
+    layer->out_width = 1;
+    layer->out_height = 1;
+    layer->out_depth = H*W*D;
+
+    layer->likelihoods = (float*) malloc(sizeof(float)*layer->out_depth);
+
+    return layer;
+}
+
+void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
+
+    // Compute max activation
+    float amax = X[0]; 
+    for(int i = 1; i < l->out_depth; i++) {
+        if (X[i] > amax) {
+            amax = X[i];
+        }
+    }
+
+    // Compute exponentials and total
+    float total = 0.0f;
+    for(int i = 0; i < l->out_depth; i++) {
+        float e = exp(X[i] - amax);
+        total += e;
+        l->likelihoods[i] = e;
+    }
+
+    // Normalize and output to sum to one
+    for(int i = 0; i < l->out_depth; i++) {
+        Y[i] = l->likelihoods[i] / total;
+
+    }
+
+}

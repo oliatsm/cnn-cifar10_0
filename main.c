@@ -108,7 +108,7 @@ int main(){
 
     load_data(input,labels,NUM_IMAGES);
 
-    // //Weights
+    // Network Layers
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
     Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,2,2,0);
@@ -119,18 +119,16 @@ int main(){
     ReLU_Layer * L8 = make_relu_layer(L7->out_width,L7->out_height,L7->out_depth);
     Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,2,2,0);
     FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,10);
+    Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
 
-    printf("%d,%d,%d ->%d,%d\n",L10->in_width,L10->in_height,L10->in_depth,L10->in_neurons,L10->out_depth);
+    printf("%d,%d,%d ->%d\n",L11->in_width,L11->in_height,L11->in_depth,L11->out_depth);
     
     load_conv(L1,"./snapshot/layer1_conv.txt");
     load_conv(L4,"./snapshot/layer4_conv.txt");
     load_conv(L7,"./snapshot/layer7_conv.txt");
     load_fc(L10,"./snapshot/layer10_fc.txt");
-
-    // arr2txt(L10->weights,1,L10->in_neurons*L10->out_depth,"L10-weights.txt");
-
-    
-    //Test First Convolution Layer
+  
+    //Allocate Outputs
     float* restrict O1 =malloc(sizeof(float)*N1*N1*M1);
     float* restrict O2 =malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
     float* restrict O3 =malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
@@ -141,7 +139,7 @@ int main(){
     float* restrict O8 =malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
     float* restrict O9 =malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
     float* restrict O10 =malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
-
+    float* restrict O11 =malloc(sizeof(float)*L11->out_depth);
 
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
@@ -156,6 +154,7 @@ int main(){
         relu_forward(O7,L8,O8);
         pool_forward(O8,L9,O9);
         fc_forward(O9,L10,O10);
+        softmax_forward(O10,L11,O11);
 
         }
     t2 = clock();
@@ -163,13 +162,11 @@ int main(){
     // arr2txt(O1,N1,M1,"O1_1.txt");
     // arr2txt(O2,N1,M1,"O2_1.txt");
     // arr2txt(O3,L3->out_width,L3->out_depth,"O3_1.txt");
-    arr2txt(O10,1,L10->out_depth,"O10_1.txt");
-
-    // for(int i=0;i<(L1->out_height*L1->out_width*L1->out_depth);i++){
-    //     printf("%f\n",O1[i]);
-    //     }
+    // arr2txt(O11,1,L11->out_depth,"O11_1.txt");
 
     printf("Total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+
+    free(O11);
     free(O10);
     free(O9);    
     free(O8);
@@ -181,6 +178,9 @@ int main(){
     free(O3);    
     free(O2);
     free(O1);
+
+    free(L11->likelihoods);
+    free(L11);
 
     free(L10->bias);
     free(L10->weights);
