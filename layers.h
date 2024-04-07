@@ -2,6 +2,10 @@
 #define LAYERS_H
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <assert.h>
+
 // Input Data
 #define N_in 32//Input Width-Height
 #define C_in 3//Colour Chanels

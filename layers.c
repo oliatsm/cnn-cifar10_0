@@ -1,13 +1,5 @@
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-
-
 #include "layers.h"
-
-
 
 //W: input Width, H: input height, D: input depth, K: filter width and height
 // M: output feature maps, S: stride, P: zerro padding

@@ -9,6 +9,7 @@
 
 #include "layers.h"
 #include "malloc2D.h"
+#include "tests.h"
 
 #define NUM_IMAGES 1200//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
@@ -128,9 +129,9 @@ int main(){
 //*
     // Network Layers
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
-    // ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
-    // Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,K3,S3,P3);
-    // Conv_Layer * L4 = make_conv_layer(L3->out_width,L3->out_height,L3->out_depth,K4,M4,S4,P4);
+    ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
+    Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,K3,S3,P3);
+    Conv_Layer * L4 = make_conv_layer(L3->out_width,L3->out_height,L3->out_depth,K4,M4,S4,P4);
     // ReLU_Layer * L5 = make_relu_layer(L4->out_width,L4->out_height,L4->out_depth);
     // Pool_Layer * L6 = make_pool_layer(L5->out_width,L5->out_height,L5->out_depth,K6,S6,P6);
     // Conv_Layer * L7 = make_conv_layer(L6->out_width,L6->out_height,L6->out_depth,K7,M7,S7,P7);
@@ -139,33 +140,15 @@ int main(){
     // FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
     // Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
     
-    //Test2: Add 1 to all Conv parameters on host, and load corrext data from device
-//*
-printf("L1:Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
-    L1->in_width,L1->in_height,L1->in_depth,L1->out_width,L1->out_height,L1->out_depth,
-    L1->filter_width,L1->filter_height,L1->num_filters,L1->stride,L1->padding);
-
-    L1->in_width++;L1->in_height++;L1->in_depth++;L1->out_width++;L1->out_height++;L1->out_depth++;
-    L1->filter_width++;L1->filter_height++;L1->num_filters++;L1->stride++;L1->padding++;
-#pragma acc update self(L1->in_width,L1->in_height,L1->in_depth,L1->out_width,L1->out_height,L1->out_depth,L1->filter_width,L1->filter_height,L1->num_filters,L1->stride,L1->padding)
-printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
-    L1->in_width,L1->in_height,L1->in_depth,L1->out_width,L1->out_height,L1->out_depth,
-    L1->filter_width,L1->filter_height,L1->num_filters,L1->stride,L1->padding);
-//*/
-//Test2^  
+    // test2(L1);
     //Loading Layers' parameters
     load_conv(L1,"./snapshot/layer1_conv.txt");
+    
     int size = L1->filter_width*L1->filter_height*L1->num_filters*L1->in_depth;
-    printf("loaded conv:%d\n",size);
-#pragma acc update device(L1->weights[0:size],L1->bias[0:L1->out_depth])
-//Test3: add 1 to Weights, then copy from the device the correct weights
-#pragma acc parallel loop copyin(size) present(L1->out_depth,L1->weights[0:size],L1->bias[0:L1->out_depth])
-    for(int i=0;i<size;i++){
-        L1->weights[i]+=1;
-    }
-#pragma acc update self(L1->weights[0:size])
-    arr2txt(L1->weights,1,size,"L1-self.txt");
-//Test3^
+#pragma acc update device(L1->weights[0:L1->filter_width*L1->filter_height*L1->num_filters*L1->in_depth],L1->bias[0:L1->out_depth])
+    test3(L1,size);
+        arr2txt(L1->weights,1,size,"L1-device.txt");
+
     // load_conv(L4,"./snapshot/layer4_conv.txt");
     // load_conv(L7,"./snapshot/layer7_conv.txt");
     // load_fc(L10,"./snapshot/layer10_fc.txt");
@@ -259,13 +242,10 @@ printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
     // free(L4->bias);
     // free(L4->weights);
     // free(L4);
-    
-    // free(L3);
-    // free(L2);
+    free_conv(L4);
+    free(L3);
+    free(L2);
 
-    // free(L1->bias);
-    // free(L1->weights);
-    // free(L1);
     free_conv(L1);
     //*/
     #pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
