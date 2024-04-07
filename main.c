@@ -96,6 +96,28 @@ int load_data(float** image, int * label, int N) {
     return 0;
 }
 
+void arr2txt(float *arr, int N,int M, char * file_name) {
+    FILE *file = fopen(file_name, "w");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file,"%d,%d,%d\n",N,N,M);
+    for (int k = 0; k < M; ++k) {
+        for (int j = 0; j < N; ++j) {
+            for (int i = 0; i < N; ++i) {
+                int idx = ((j*N)+i)+(N*N)*k;
+                fprintf(file, "%f ", arr[idx]);
+                // printf("%d\n",idx);
+            }
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
+
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     // clock_t t1,t2; 
@@ -153,13 +175,16 @@ int main(){
     float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_depth);
 #pragma acc enter data create(O11[0:NUM_IMAGES][0:L11->out_depth])
 
-
+int i=1;
     // //Net Forward
     // t1 = clock();
     // for(int i=0;i<NUM_IMAGES;i++){
 
-    //     conv_forward(input[i],L1,O1);
-    //     relu_forward(O1,L2,O2);
+        conv_forward(input[i],L1,O1);
+        #pragma acc update device(O1[0:L1->out_width*L1->out_height*L1->out_depth])
+        relu_forward(O1,L2,O2);
+        #pragma acc update self(O2[0:L2->out_width*L2->out_height*L2->out_depth])
+        arr2txt(O2,L2->out_height,L2->out_depth,"O2.txt");
     //     pool_forward(O2,L3,O3);
     //     conv_forward(O3,L4,O4);
     //     relu_forward(O4,L5,O5);
