@@ -38,7 +38,9 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     layer->bias=malloc(sizeof(float)*M);
 #pragma acc enter data create(layer->bias[0:M])
 
-#pragma acc update device(layer[0:1])
+#pragma acc update device(layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth)
+#pragma acc update device(layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding)
+
 //Test1: Add 1 to all Conv parameters on host, and load corrext data from device
 /*
 printf("Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
