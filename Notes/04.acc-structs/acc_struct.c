@@ -4,90 +4,73 @@
 
 #include <openacc.h>
 
-typedef struct{
-    int n;
-    float *x, *y, *z;
-}point;
-void move_to_device( point *A );
-void move_from_device( point* A );
-void vecaddgpu( point *A, float* base );
+#define SIZE 1000
 
-point * init_point(int num_points);
-void vecadd( point *A, float* base );
-void dumpFile(point * A, char * file_name);
+typedef struct point_t{
+    int n;
+    float *x,*y,*z;
+}point;
+
+
+void init_base();
+void print_arr(int size,float arr[size]);
+point * malloc_points(int size);
+void vecadd(point *A, float* base);
+void vecaddgpu(point *A, float* base);
 
 int main(){
-    int size = 100;
-    point * P = init_point(size);
-    move_to_device(P);
-    float * B = malloc(sizeof(float)*size);
-    for(int i=0;i<size;i++){
-        B[i]=(float)(i+1)*(i+1);
-    }
-#pragma acc enter data copyin(B[0:size])
-    // vecaddgpu(P,B);
-    // move_from_device(P);
-    dumpFile(P,"output.txt");
 
+    float * base = malloc(sizeof(float)*SIZE);
+    
+    point * P = malloc_points(SIZE);
+
+
+    init_base(base);
+    // vecadd(P,base);
+    vecaddgpu(P,base);
+    // printf("%n: %f\n",P->n,P->y);
+
+    print_arr(P->n,P->y);
+    
 
     return 0;
 }
-void move_to_device( point *A ){
-#pragma acc enter data copyin(A[0:1])
-#pragma acc enter data create(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n])
-// A[0:1]
-// A->x[0:A->n], A->y[0:A->n], A->z[0:A->n]
-}
-void move_from_device( point* A ){
-#pragma acc enter data copyout(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n])
-#pragma acc enter data delete(A[0:1])
-}
 
-void vecaddgpu( point *A, float* base ){
-#pragma acc parallel loop present(A[0:1]) present(A->x[0:A->n], A->y[0:A->n], A->z[0:A->n]) present(base[0:A->n])
-    for( int i = 0; i < A->n; ++i ){
-        A->x[i] = base[i];
-        A->y[i] = sqrtf( base[i] );
-        A->z[i] = 0;
+void init_base(float * base){
+
+    for (int i=0;i<SIZE;i++){
+        base[i] = (i+1)*(i+1);
     }
 }
 
-point * init_point(int num_points){
+void print_arr(int size,float arr[size]){
+    printf("Print...\n");
+    for(int i=0;i<size;i+=1){
+        printf("%.2f\n",arr[i]);
+    }
 
+}
+point * malloc_points(int size){
     point * A = malloc(sizeof(point));
-    A->n=num_points;
-    A->x=malloc(sizeof(float)*A->n);
-    A->y=malloc(sizeof(float)*A->n);
-    A->z=malloc(sizeof(float)*A->n);
-
-    // for(int i=0;i<A->n;i++){
-    //     A->x[i]=(i+1)*0.1;
-    //     A->y[i]=(i+1)*1.0;
-    //     A->z[i]=(i+1)*10.0;
-    // }
-
+    A->n = size;
+    A->x = malloc(sizeof(float)*A->n);
+    A->y = malloc(sizeof(float)*A->n);
+    A->z = malloc(sizeof(float)*A->n);
     return A;
 }
-
-void vecadd( point *A, float* base ){
-    for( int i = 0; i < A->n; ++i ){
+void vecadd(point *A, float* base){
+    for(int i=0 ; i<A->n ; i++){
         A->x[i] = base[i];
-        A->y[i] = sqrtf( base[i] );
+        A->y[i] = sqrtf(base[i]);
         A->z[i] = 0;
     }
 }
 
-void dumpFile(point * A, char * file_name) {
-    FILE *file = fopen(file_name, "w");
-
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        return;
+void vecaddgpu(point *A, float* base){
+#pragma acc parallel loop copyin(A[0:1]) copyout(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n]) copyin(base[0:A->n])
+    for(int i=0 ; i<A->n ; i++){
+        A->x[i] = base[i];
+        A->y[i] = sqrtf(base[i]);
+        A->z[i] = 0;
     }
-    fprintf(file,"x y z\n");
-    for (int i = 0; i < A->n; ++i) {
-        fprintf(file, "%.2f %.2f %.2f\n", A->x[i],A->y[i],A->z[i]);
-    }
-    
-    fclose(file);
 }
