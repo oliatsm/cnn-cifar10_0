@@ -11,7 +11,7 @@
 #include "malloc2D.h"
 #include "tests.h"
 
-#define NUM_IMAGES 1200//Number of Input Data
+#define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -101,7 +101,7 @@ void arr2txt(float *arr, int N,int M, char * file_name);
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    clock_t t1,t2; 
+    // clock_t t1,t2; 
     printf("CNN for %d images\n",NUM_IMAGES);
 
     int labels[NUM_IMAGES];
@@ -111,48 +111,27 @@ int main(){
 
     load_data(input,labels,NUM_IMAGES);
     #pragma acc update device (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
-/*
-    #pragma acc parallel loop present(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
-    for (int i=0;i<NUM_IMAGES;i++){
-        for (int j=0;j<IMAGE_PIXELS;j++){
-            input[i][j]+=1;
-        }
-    }
-    #pragma acc update self (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
-    for (int i=0;i<NUM_IMAGES;i+=5000){
-        for (int j=0;j<IMAGE_PIXELS;j+=100){
-            printf("%f\n",input[i][j]);
-    }}
-    */
-
-//*
+    
     // Network Layers
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
     Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,K3,S3,P3);
     Conv_Layer * L4 = make_conv_layer(L3->out_width,L3->out_height,L3->out_depth,K4,M4,S4,P4);
-    // ReLU_Layer * L5 = make_relu_layer(L4->out_width,L4->out_height,L4->out_depth);
-    // Pool_Layer * L6 = make_pool_layer(L5->out_width,L5->out_height,L5->out_depth,K6,S6,P6);
-    // Conv_Layer * L7 = make_conv_layer(L6->out_width,L6->out_height,L6->out_depth,K7,M7,S7,P7);
-    // ReLU_Layer * L8 = make_relu_layer(L7->out_width,L7->out_height,L7->out_depth);
-    // Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,K9,S9,P9);
-    // FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
-    // Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
+    ReLU_Layer * L5 = make_relu_layer(L4->out_width,L4->out_height,L4->out_depth);
+    Pool_Layer * L6 = make_pool_layer(L5->out_width,L5->out_height,L5->out_depth,K6,S6,P6);
+    Conv_Layer * L7 = make_conv_layer(L6->out_width,L6->out_height,L6->out_depth,K7,M7,S7,P7);
+    ReLU_Layer * L8 = make_relu_layer(L7->out_width,L7->out_height,L7->out_depth);
+    Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,K9,S9,P9);
+    FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
+    Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
     
-    // test2(L1);
     //Loading Layers' parameters
     load_conv(L1,"./snapshot/layer1_conv.txt");
+    load_conv(L4,"./snapshot/layer4_conv.txt");
+    load_conv(L7,"./snapshot/layer7_conv.txt");
+    load_fc(L10,"./snapshot/layer10_fc.txt");
     
-    int size = L1->filter_width*L1->filter_height*L1->num_filters*L1->in_depth;
-#pragma acc update device(L1->weights[0:L1->filter_width*L1->filter_height*L1->num_filters*L1->in_depth],L1->bias[0:L1->out_depth])
-    test3(L1,size);
-        arr2txt(L1->weights,1,size,"L1-device.txt");
-
-    // load_conv(L4,"./snapshot/layer4_conv.txt");
-    // load_conv(L7,"./snapshot/layer7_conv.txt");
-    // load_fc(L10,"./snapshot/layer10_fc.txt");
-  
     //Allocate Outputs
     // float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
     // float* restrict O2 = malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
@@ -224,30 +203,22 @@ int main(){
     // free(O2);
     // free(O1);
 
-    // free(L11->likelihoods);
-    // free(L11);
 
-    // free(L10->bias);
-    // free(L10->weights);
-    // free(L10);
+    free_softmax(L11);
+    free_fc(L10);
 
-    // free(L9);
-    // free(L8);
-    // free(L7->bias);
-    // free(L7->weights);
-    // free(L7);
+    free_pool(L9);
+    free_relu(L8);
+    free_conv(L7);
 
-    // free(L6);
-    // free(L5);
-    // free(L4->bias);
-    // free(L4->weights);
-    // free(L4);
+    free_pool(L6);
+    free_relu(L5);
     free_conv(L4);
-    free(L3);
-    free(L2);
 
+    free_pool(L3);
+    free_relu(L2);
     free_conv(L1);
-    //*/
+
     #pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     free(input);
     printf("END!\n");
