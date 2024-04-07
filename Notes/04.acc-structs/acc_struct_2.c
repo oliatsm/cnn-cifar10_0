@@ -17,6 +17,9 @@ void print_arr(int size,float arr[size]);
 point * malloc_points(int size);
 void vecadd(point *A, float* base);
 void vecaddgpu(point *A, float* base);
+void move_to_device(point *A);
+void move_from_device(point *A);
+
 
 int main(){
 
@@ -24,11 +27,10 @@ int main(){
     
     point * P = malloc_points(SIZE);
 
-
     init_base(base);
-    // vecadd(P,base);
+    move_to_device(P);
     vecaddgpu(P,base);
-    // printf("%n: %f\n",P->n,P->y);
+    move_from_device(P);
 
     print_arr(P->n,P->y);
     
@@ -66,8 +68,19 @@ void vecadd(point *A, float* base){
     }
 }
 
+void move_to_device(point *A){
+    #pragma acc enter data copyin(A[0:1])
+    #pragma acc enter data create(A->x[A->n],A->y[A->n],A->z[A->n])
+}
+
+void move_from_device(point *A){
+    #pragma acc exit data copyout(A->x[A->n],A->y[A->n],A->z[A->n])
+    #pragma acc exit data delete(A[0:1])
+}
+
 void vecaddgpu(point *A, float* base){
-#pragma acc parallel loop copyin(A[0:1]) copyout(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n]) copyin(base[0:A->n])
+// #pragma acc parallel loop copyin(A[0:1]) copyout(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n]) copyin(base[0:A->n])
+#pragma acc parallel loop present(A[0:1]) present(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n]) copyin(base[0:A->n])
     for(int i=0 ; i<A->n ; i++){
         A->x[i] = base[i];
         A->y[i] = sqrtf(base[i]);
