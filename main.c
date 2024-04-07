@@ -9,7 +9,7 @@
 
 #include "layers.h"
 #include "malloc2D.h"
-#include "tests.h"
+// #include "tests.h"
 
 #define NUM_IMAGES 50000//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
@@ -96,9 +96,6 @@ int load_data(float** image, int * label, int N) {
     return 0;
 }
 
-
-void arr2txt(float *arr, int N,int M, char * file_name);
-
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     // clock_t t1,t2; 
@@ -133,17 +130,29 @@ int main(){
     load_fc(L10,"./snapshot/layer10_fc.txt");
     
     //Allocate Outputs
-    // float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
-    // float* restrict O2 = malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
-    // float* restrict O3 = malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
-    // float* restrict O4 = malloc(sizeof(float)*L4->out_width*L4->out_height*L4->out_depth);
-    // float* restrict O5 = malloc(sizeof(float)*L5->out_width*L5->out_height*L5->out_depth);
-    // float* restrict O6 = malloc(sizeof(float)*L6->out_width*L6->out_height*L6->out_depth);
-    // float* restrict O7 = malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
-    // float* restrict O8 = malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
-    // float* restrict O9 = malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
-    // float* restrict O10 = malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
-    // float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_depth);
+    float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
+#pragma acc enter data create(O1[0:L1->out_width*L1->out_height*L1->out_depth])
+    float* restrict O2 = malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
+#pragma acc enter data create(O2[0:L2->out_width*L2->out_height*L2->out_depth])
+    float* restrict O3 = malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
+#pragma acc enter data create(O3[0:L3->out_width*L3->out_height*L3->out_depth])
+    float* restrict O4 = malloc(sizeof(float)*L4->out_width*L4->out_height*L4->out_depth);
+#pragma acc enter data create(O4[0:L4->out_width*L4->out_height*L4->out_depth])
+    float* restrict O5 = malloc(sizeof(float)*L5->out_width*L5->out_height*L5->out_depth);
+#pragma acc enter data create(O5[0:L5->out_width*L5->out_height*L5->out_depth])
+    float* restrict O6 = malloc(sizeof(float)*L6->out_width*L6->out_height*L6->out_depth);
+#pragma acc enter data create(O6[0:L6->out_width*L6->out_height*L6->out_depth])
+    float* restrict O7 = malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
+#pragma acc enter data create(O7[0:L7->out_width*L7->out_height*L7->out_depth])
+    float* restrict O8 = malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
+#pragma acc enter data create(O8[0:L8->out_width*L8->out_height*L8->out_depth])
+    float* restrict O9 = malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
+#pragma acc enter data create(O9[0:L9->out_width*L9->out_height*L9->out_depth])
+    float* restrict O10 = malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
+#pragma acc enter data create(O10[0:L10->out_width*L10->out_height*L10->out_depth])
+    float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_depth);
+#pragma acc enter data create(O11[0:NUM_IMAGES][0:L11->out_depth])
+
 
     // //Net Forward
     // t1 = clock();
@@ -190,18 +199,28 @@ int main(){
 
     // printf("Net Accuracy: %.2f %% \n",100*(float)correct_label/NUM_IMAGES);
 
-    // free(O11);
-    // free(O10);
-    // free(O9);    
-    // free(O8);
-    // free(O7);
-    
-    // free(O6);    
-    // free(O5);
-    // free(O4);
-    // free(O3);    
-    // free(O2);
-    // free(O1);
+#pragma acc exit data delete(O11[0:NUM_IMAGES][0:L11->out_depth])
+    free(O11);
+#pragma acc exit data delete(O10[0:L10->out_width*L10->out_height*L10->out_depth])
+    free(O10);
+#pragma acc exit data delete(O9[0:L9->out_width*L9->out_height*L9->out_depth])
+    free(O9);
+#pragma acc exit data delete(O8[0:L8->out_width*L8->out_height*L8->out_depth])    
+    free(O8);
+#pragma acc exit data delete(O7[0:L7->out_width*L7->out_height*L7->out_depth])
+    free(O7);
+#pragma acc exit data delete(O6[0:L6->out_width*L6->out_height*L6->out_depth])   
+    free(O6);    
+#pragma acc exit data delete(O5[0:L5->out_width*L5->out_height*L5->out_depth])
+    free(O5);
+#pragma acc exit data delete(O4[0:L4->out_width*L4->out_height*L4->out_depth])
+    free(O4);
+#pragma acc exit data delete(O3[0:L3->out_width*L3->out_height*L3->out_depth])
+    free(O3);
+#pragma acc exit data delete(O2[0:L2->out_width*L2->out_height*L2->out_depth])    
+    free(O2);
+#pragma acc exit data delete(O1[0:L1->out_width*L1->out_height*L1->out_depth])
+    free(O1);
 
 
     free_softmax(L11);
@@ -226,24 +245,3 @@ int main(){
     return 0;
 }
 
-void arr2txt(float *arr, int N,int M, char * file_name) {
-    FILE *file = fopen(file_name, "w");
-
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        return;
-    }
-    fprintf(file,"%d,%d,%d\n",N,N,M);
-    for (int k = 0; k < M; ++k) {
-        for (int j = 0; j < N; ++j) {
-            for (int i = 0; i < N; ++i) {
-                int idx = ((j*N)+i)+(N*N)*k;
-                fprintf(file, "%f ", arr[idx]);
-                // printf("%d\n",idx);
-            }
-            fprintf(file, "\n");
-        }
-    }
-
-    fclose(file);
-}

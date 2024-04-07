@@ -9,5 +9,7 @@ void test5(Pool_Layer * l);
 void test6(FC_Layer * l);
 void test7(Softmax_Layer * l);
 void test8(Softmax_Layer * l);
+void test9(Conv_Layer *l, float * out);
+void arr2txt(float *arr, int N,int M, char * file_name) ;
 
 #endif

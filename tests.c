@@ -111,3 +111,38 @@ printf("After\n Softmax:(%d,%d,%d)->(%d,%d,%d)\n",
     l->in_width,l->in_height,l->in_depth,l->out_width,l->out_height,l->out_depth);
 }
 //Test8^  
+
+void test9(Conv_Layer *l, float * out){
+
+#pragma acc parallel loop present(l,out)
+    for(int i=0;i<(l->out_width*l->out_height*l->out_depth);i++){
+        out[i] = 0.0f;
+        for(int j =0; j<l->filter_width*l->filter_height;j++){
+            out[i]+=l->weights[j];
+        }
+    }
+#pragma acc update self(out[0:l->out_width*l->out_height*l->out_depth])
+    arr2txt(out,1,l->out_width*l->out_height*l->out_depth,"out7.txt");
+}
+
+void arr2txt(float *arr, int N,int M, char * file_name) {
+    FILE *file = fopen(file_name, "w");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file,"%d,%d,%d\n",N,N,M);
+    for (int k = 0; k < M; ++k) {
+        for (int j = 0; j < N; ++j) {
+            for (int i = 0; i < N; ++i) {
+                int idx = ((j*N)+i)+(N*N)*k;
+                fprintf(file, "%f ", arr[idx]);
+                // printf("%d\n",idx);
+            }
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
