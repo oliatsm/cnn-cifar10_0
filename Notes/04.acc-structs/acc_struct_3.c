@@ -20,6 +20,7 @@ void vecadd(point *A, float* base);
 void vecaddgpu(point *A, float* base);
 void move_to_device(point *A);
 void move_from_device(point *A);
+void free_point(point *A);
 
 
 int main(){
@@ -31,6 +32,7 @@ int main(){
     init_base(base);
     // move_to_device(P);
     #pragma acc enter data copyin(base[0:SIZE])
+
     #pragma acc enter data create(P[0:1])
     #pragma acc enter data create(P->x[0:P->n],P->y[0:P->n],P->z[0:P->n])
     #pragma acc update device(P->n)
@@ -44,15 +46,15 @@ int main(){
     //     P->z[i] = 0;
     // }
     vecaddgpu(P,base);
-    // move_from_device(P);
 #pragma acc update self(base[0:SIZE],P->x[:P->n],P->y[0:P->n],P->z[0:P->n])
     // print_arr(P->n,base);
     print_points(P);
-
-    // #pragma acc exit data delete(P->x[P->n],P->y[P->n],P->z[P->n])
-    // #pragma acc exit data delete(P[0:1])
-    
-    
+    // move_from_device(P);
+#pragma acc exit data delete(base[0:SIZE])
+    free(base);
+    #pragma acc exit data delete(P->x[P->n],P->y[P->n],P->z[P->n])
+    #pragma acc exit data delete(P[0:1])
+    free_point(P);
 
     return 0;
 }
@@ -121,4 +123,12 @@ void vecaddgpu(point *A, float* base){
         A->y[i] = sqrtf(base[i]);
         A->z[i] = 0;
     }
+}
+
+void free_point(point * A){
+    free(A->x);
+    free(A->y);
+    free(A->z);
+    free(A);
+
 }

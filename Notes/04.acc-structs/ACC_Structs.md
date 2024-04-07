@@ -2,7 +2,7 @@
 
 παράδειγμα από [NVIDIA Documentation](https://docs.nvidia.com/hpc-sdk/compilers/openacc-gs/index.html#openacc-c-struct)
 
-## 2.4. C Structs in OpenACC
+### 2.4. C Structs in OpenACC
 
 Static arrays of struct and pointers to dynamic arrays of struct are supported in OpenACC regions by the NVIDIA C++ and C compilers.
 
@@ -97,3 +97,6 @@ void vecaddgpu( point *A, float* base ){
     }
 } 
 ```
+## Πρόβλημα
+
+Το παράδειγμα παραπάνω δεν δουλεύει. Δουλεύει εάν τα enter data create γίνουν στη main. [Παράδειγμα 3](acc_struct_3.c)
