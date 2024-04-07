@@ -36,6 +36,7 @@ int main(){
     #pragma acc enter data create(P[0:1])
     #pragma acc enter data create(P->x[0:P->n],P->y[0:P->n],P->z[0:P->n])
     #pragma acc update device(P->n)
+    // #pragma acc update device(P[0:1]) //DEN DOULEYEI
     
     // #pragma acc parallel loop present(P[0:1],P->x[0:P->n],P->y[0:P->n],P->z[0:P->n]) present(base[0:SIZE])
     // #pragma acc parallel loop present(base[0:SIZE]) present(P->n) present(P->x[:P->n],P->y[0:P->n],P->z[0:P->n])
