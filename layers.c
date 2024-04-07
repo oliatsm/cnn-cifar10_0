@@ -57,12 +57,12 @@ printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
 }
 
 void free_conv(Conv_Layer * l){
-    int size = l->in_depth*l->in_height*l->in_width;
-#pragma acc exit data delete(l->bias)
+    int size = l->in_depth*l->filter_height*l->filter_width*l->num_filters;
+#pragma acc exit data delete(l->bias[0:l->out_depth])
     free(l->bias);
-#pragma acc exit data delete(l->weights)
+#pragma acc exit data delete(l->weights[0:size])
     free(l->weights);
-#pragma acc exit data delete(l)
+#pragma acc exit data delete(l[0:1])
     free(l);
 }
 

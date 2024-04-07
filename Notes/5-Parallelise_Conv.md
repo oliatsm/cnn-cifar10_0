@@ -23,11 +23,11 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
 /* Free struct */
 void free_conv(Conv_Layer * l){
     int size = l->in_depth*l->in_height*l->in_width;
-#pragma acc exit data delete(l->bias)
+#pragma acc exit data delete(l->bias[0:l->out_depth])
     free(l->bias);
-#pragma acc exit data delete(l->weights)
+#pragma acc exit data delete(l->weights[0:size])
     free(l->weights);
-#pragma acc exit data delete(l)
+#pragma acc exit data delete(l[0:1])
     free(l);
 }
 ```
