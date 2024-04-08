@@ -13,6 +13,7 @@
 // #include "tests.h"
 
 #define NUM_IMAGES 1200//Number of Input Data
+#define NUM_IMAGES 1200//Number of Input Data
 #define NUM_CLASSES 10 // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -125,7 +126,7 @@ int main(){
     printf("CNN for %d images\n",NUM_IMAGES);
 
     int labels[NUM_IMAGES];
-    
+
     float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
     #pragma acc enter data create(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
@@ -143,59 +144,41 @@ int main(){
     load_fc(cnn->L10,"./snapshot/layer10_fc.txt");
     
     //Allocate Outputs
-    float* restrict O1 = malloc(sizeof(float)*cnn->L1->out_width*cnn->L1->out_height*cnn->L1->out_depth);
-#pragma acc enter data create(O1[0:cnn->L1->out_width*cnn->L1->out_height*cnn->L1->out_depth])
-    float* restrict O2 = malloc(sizeof(float)*cnn->L2->out_width*cnn->L2->out_height*cnn->L2->out_depth);
-#pragma acc enter data create(O2[0:cnn->L2->out_width*cnn->L2->out_height*cnn->L2->out_depth])
-    float* restrict O3 = malloc(sizeof(float)*cnn->L3->out_width*cnn->L3->out_height*cnn->L3->out_depth);
-#pragma acc enter data create(O3[0:cnn->L3->out_width*cnn->L3->out_height*cnn->L3->out_depth])
-    float* restrict O4 = malloc(sizeof(float)*cnn->L4->out_width*cnn->L4->out_height*cnn->L4->out_depth);
-#pragma acc enter data create(O4[0:cnn->L4->out_width*cnn->L4->out_height*cnn->L4->out_depth])
-    float* restrict O5 = malloc(sizeof(float)*cnn->L5->out_width*cnn->L5->out_height*cnn->L5->out_depth);
-#pragma acc enter data create(O5[0:cnn->L5->out_width*cnn->L5->out_height*cnn->L5->out_depth])
-    float* restrict O6 = malloc(sizeof(float)*cnn->L6->out_width*cnn->L6->out_height*cnn->L6->out_depth);
-#pragma acc enter data create(O6[0:cnn->L6->out_width*cnn->L6->out_height*cnn->L6->out_depth])
-    float* restrict O7 = malloc(sizeof(float)*cnn->L7->out_width*cnn->L7->out_height*cnn->L7->out_depth);
-#pragma acc enter data create(O7[0:cnn->L7->out_width*cnn->L7->out_height*cnn->L7->out_depth])
-    float* restrict O8 = malloc(sizeof(float)*cnn->L8->out_width*cnn->L8->out_height*cnn->L8->out_depth);
-#pragma acc enter data create(O8[0:cnn->L8->out_width*cnn->L8->out_height*cnn->L8->out_depth])
-    float* restrict O9 = malloc(sizeof(float)*cnn->L9->out_width*cnn->L9->out_height*cnn->L9->out_depth);
-#pragma acc enter data create(O9[0:cnn->L9->out_width*cnn->L9->out_height*cnn->L9->out_depth])
-    float* restrict O10 = malloc(sizeof(float)*cnn->L10->out_depth*cnn->L10->in_neurons);
-#pragma acc enter data create(O10[0:cnn->L10->out_width*cnn->L10->out_height*cnn->L10->out_depth])
-    float** restrict O11 = malloc2D(NUM_IMAGES,cnn->L11->out_depth);
-#pragma acc enter data create(O11[0:NUM_IMAGES][0:cnn->L11->out_depth])
+    float **O = allocate_outputs(cnn);
+    float**  output =malloc2D(NUM_IMAGES,cnn->L11->out_depth);
+    #pragma acc enter data create(output[0:NUM_IMAGES][0:cnn->L11->out_depth])
+
 
     //Net Forward
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
 
-        conv_forward(input[i],cnn->L1,O1);
-        relu_forward(O1,cnn->L2,O2);
-        pool_forward(O2,cnn->L3,O3);
-        conv_forward(O3,cnn->L4,O4);
-        relu_forward(O4,cnn->L5,O5);
-        pool_forward(O5,cnn->L6,O6);
-        conv_forward(O6,cnn->L7,O7);
-        relu_forward(O7,cnn->L8,O8);
-        pool_forward(O8,cnn->L9,O9);
-        fc_forward(O9,cnn->L10,O10);
-        softmax_forward(O10,cnn->L11,O11[i]);
+        conv_forward(input[i],cnn->L1,O[0]);
+        relu_forward(O[0],cnn->L2,O[1]);
+        pool_forward(O[1],cnn->L3,O[2]);
+        conv_forward(O[2],cnn->L4,O[3]);
+        relu_forward(O[3],cnn->L5,O[4]);
+        pool_forward(O[4],cnn->L6,O[5]);
+        conv_forward(O[5],cnn->L7,O[6]);
+        relu_forward(O[6],cnn->L8,O[7]);
+        pool_forward(O[7],cnn->L9,O[8]);
+        fc_forward(O[8],cnn->L10,O[9]);
+        softmax_forward(O[9],cnn->L11,output[i]);
 
         }
     t2 = clock();
-   arr2txt(O11[NUM_IMAGES-1],cnn->L11->out_width,cnn->L11->out_depth,"O11_1.txt");
+   arr2txt(output[NUM_IMAGES-1],cnn->L11->out_width,cnn->L11->out_depth,"out1_1.txt");
     printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
     // Results
     int predictions[NUM_IMAGES];
     for(int n=0;n<NUM_IMAGES;n++){
         int class_o = 0;
-        float max_o = O11[n][0];
+        float max_o = output[n][0];
         for(int i=1;i<cnn->L11->out_depth;i++){
-            if(max_o < O11[n][i]){
+            if(max_o < output[n][i]){
                 class_o = i;
-                max_o = O11[n][i];
+                max_o = output[n][i];
             }
         }
         predictions[n] = class_o;
@@ -208,51 +191,18 @@ int main(){
             correct_label++;
         }
     }
+   
 
     printf("Net Accuracy: %.2f %% \n",100*(float)correct_label/NUM_IMAGES);
+#pragma acc exit data delete(output[0:NUM_IMAGES][0:cnn->L11->out_depth])
+    free(output);
+    free(O);
 
-#pragma acc exit data delete(O11[0:NUM_IMAGES][0:cnn->L11->out_depth])
-    free(O11);
-#pragma acc exit data delete(O10[0:cnn->L10->out_width*cnn->L10->out_height*cnn->L10->out_depth])
-    free(O10);
-#pragma acc exit data delete(O9[0:cnn->L9->out_width*cnn->L9->out_height*cnn->L9->out_depth])
-    free(O9);
-#pragma acc exit data delete(O8[0:cnn->L8->out_width*cnn->L8->out_height*cnn->L8->out_depth])    
-    free(O8);
-#pragma acc exit data delete(O7[0:cnn->L7->out_width*cnn->L7->out_height*cnn->L7->out_depth])
-    free(O7);
-#pragma acc exit data delete(O6[0:cnn->L6->out_width*cnn->L6->out_height*cnn->L6->out_depth])   
-    free(O6);    
-#pragma acc exit data delete(O5[0:cnn->L5->out_width*cnn->L5->out_height*cnn->L5->out_depth])
-    free(O5);
-#pragma acc exit data delete(O4[0:cnn->L4->out_width*cnn->L4->out_height*cnn->L4->out_depth])
-    free(O4);
-#pragma acc exit data delete(O3[0:cnn->L3->out_width*cnn->L3->out_height*cnn->L3->out_depth])
-    free(O3);
-#pragma acc exit data delete(O2[0:cnn->L2->out_width*cnn->L2->out_height*cnn->L2->out_depth])    
-    free(O2);
-#pragma acc exit data delete(O1[0:cnn->L1->out_width*cnn->L1->out_height*cnn->L1->out_depth])
-    free(O1);
-
-
-    // free_softmax(L11);
-    // free_fc(L10);
-
-    // free_pool(L9);
-    // free_relu(L8);
-    // free_conv(L7);
-
-    // free_pool(L6);
-    // free_relu(L5);
-    // free_conv(L4);
-
-    // free_pool(L3);
-    // free_relu(L2);
-    // free_conv(L1);
     free_network(cnn);
 
     #pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     free(input);
+    
     printf("END!\n");
 
     return 0;

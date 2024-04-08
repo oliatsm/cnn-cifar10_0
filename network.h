@@ -3,6 +3,7 @@
 
 #include "layers.h"
 
+#define NUM_LAYERS 11
 // Input Data
 #define N_in 32//Input Width-Height
 #define C_in 3//Colour Chanels
@@ -60,6 +61,9 @@ typedef struct network{
 }Network;
 
 Network * make_network();
+float ** allocate_outputs(Network * net);
+
 void free_network(Network * net);
+void free_outputs(float **out,Network *net);
 
 #endif
