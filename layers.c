@@ -105,7 +105,7 @@ ReLU_Layer * make_relu_layer(int W, int H, int D){
 void relu_forward(float* restrict X,ReLU_Layer * l,float * restrict Y){
 
     int size = l->out_depth*l->in_height*l->in_width;
-#pragma acc parallel loop present(X,l,Y) copyin(size)
+// #pragma acc parallel loop present(X,l,Y) copyin(size)
     for(int i=0;i<size;i++){
         Y[i]=(X[i]<0.0f) ? 0.0f : X[i];
     }
