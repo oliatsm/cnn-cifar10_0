@@ -1,4 +1,3 @@
-
 #include "layers.h"
 
 //W: input Width, H: input height, D: input depth, K: filter width and height
