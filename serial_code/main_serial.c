@@ -5,9 +5,7 @@
 #include <string.h>
 #include <time.h> 
 
-#include <openacc.h>
-
-#include "layers.h"
+#include "layers_serial.h"
 #include "malloc2D.h"
 
 #define NUM_IMAGES 1200//Number of Input Data
@@ -19,7 +17,7 @@
 
 
 // Folder for .bin files of cifar dataset on my system.
-const char *DATA_FOLDER = "../cifar-10-batches-bin";
+const char *DATA_FOLDER = "../../cifar-10-batches-bin";
 
 // Loading N samples from CIFAR-10 Dataset to Image[N][PIXEL] and Label[N]
 int load_data(float** image, int * label, int N) {
@@ -123,10 +121,10 @@ int main(){
     Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
     
     //Loading Layers' parameters
-    load_conv(L1,"./snapshot/layer1_conv.txt");
-    load_conv(L4,"./snapshot/layer4_conv.txt");
-    load_conv(L7,"./snapshot/layer7_conv.txt");
-    load_fc(L10,"./snapshot/layer10_fc.txt");
+    load_conv(L1,"./../snapshot/layer1_conv.txt");
+    load_conv(L4,"./../snapshot/layer4_conv.txt");
+    load_conv(L7,"./../snapshot/layer7_conv.txt");
+    load_fc(L10,"./../snapshot/layer10_fc.txt");
   
     //Allocate Outputs
     float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
