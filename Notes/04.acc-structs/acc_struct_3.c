@@ -85,10 +85,10 @@ void vecadd(point *A, float* base){
 }
 
 void move_to_device(point *A){
-    #pragma acc enter data create(A[0:1])
+    #pragma acc enter data copyin(A[0:1])
     #pragma acc enter data create(A->x[0:A->n],A->y[0:A->n],A->z[0:A->n])
 
-    #pragma acc update device(A->n)
+    // #pragma acc update device(A->n)
 }
 
 void move_from_device(point *A){
