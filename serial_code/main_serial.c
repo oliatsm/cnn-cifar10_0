@@ -127,17 +127,17 @@ int main(){
     load_fc(L10,"./../snapshot/layer10_fc.txt");
   
     //Allocate Outputs
-    float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
-    float* restrict O2 = malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
-    float* restrict O3 = malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
-    float* restrict O4 = malloc(sizeof(float)*L4->out_width*L4->out_height*L4->out_depth);
-    float* restrict O5 = malloc(sizeof(float)*L5->out_width*L5->out_height*L5->out_depth);
-    float* restrict O6 = malloc(sizeof(float)*L6->out_width*L6->out_height*L6->out_depth);
-    float* restrict O7 = malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
-    float* restrict O8 = malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
-    float* restrict O9 = malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
-    float* restrict O10 = malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
-    float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_depth);
+    float* restrict O1 = malloc(sizeof(float)*L1->out_size);
+    float* restrict O2 = malloc(sizeof(float)*L2->out_size);
+    float* restrict O3 = malloc(sizeof(float)*L3->out_size);
+    float* restrict O4 = malloc(sizeof(float)*L4->out_size);
+    float* restrict O5 = malloc(sizeof(float)*L5->out_size);
+    float* restrict O6 = malloc(sizeof(float)*L6->out_size);
+    float* restrict O7 = malloc(sizeof(float)*L7->out_size);
+    float* restrict O8 = malloc(sizeof(float)*L8->out_size);
+    float* restrict O9 = malloc(sizeof(float)*L9->out_size);
+    float* restrict O10 = malloc(sizeof(float)*L10->out_size);
+    float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_size);
 
     //Net Forward
     t1 = clock();
