@@ -6,7 +6,6 @@
 Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     
     Conv_Layer *layer=malloc(sizeof(Conv_Layer));
-#pragma acc enter data create(layer[0:1])
 
     layer->in_width=W;
     layer->in_height=H;
@@ -23,38 +22,23 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     layer->out_height=(H-K+2*P)/S+1;
     layer->out_depth=M;
 
-    int size = K*K*M*D;
-    layer->weights=malloc(sizeof(float)*size);
-#pragma acc enter data create(layer->weights[0:size])
+    layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
 
+    layer->weights=malloc(sizeof(float)*K*K*M*D);
     layer->bias=malloc(sizeof(float)*M);
+
+#pragma acc enter data copyin(layer[0:1])
+#pragma acc enter data create(layer->weights[0:K*K*M*D])
 #pragma acc enter data create(layer->bias[0:M])
-
-#pragma acc update device(layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth)
-#pragma acc update device(layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding)
-
-//Test1: Add 1 to all Conv parameters on host, and load corrext data from device
-/*
-printf("Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
-    layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth,
-    layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding);
-
-    layer->in_width++;layer->in_height++;layer->in_depth++;layer->out_width++;layer->out_height++;layer->out_depth++;
-    layer->filter_width++;layer->filter_height++;layer->num_filters++;layer->stride++;layer->padding++;
-#pragma acc update self(layer[0:1])
-printf("After\n Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
-    layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth,
-    layer->filter_width,layer->filter_height,layer->num_filters,layer->stride,layer->padding);
-*/
-//Test1^    
+    
     return layer;
 }
 
 void free_conv(Conv_Layer * l){
-    int size = l->in_depth*l->filter_height*l->filter_width*l->num_filters;
+    // int size = l->in_depth*l->filter_height*l->filter_width*l->num_filters;
 #pragma acc exit data delete(l->bias[0:l->out_depth])
     free(l->bias);
-#pragma acc exit data delete(l->weights[0:size])
+#pragma acc exit data delete(l->weights[0:(l->in_depth*l->filter_height*l->filter_width*l->num_filters)])
     free(l->weights);
 #pragma acc exit data delete(l[0:1])
     free(l);
@@ -90,7 +74,7 @@ void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
 
 ReLU_Layer * make_relu_layer(int W, int H, int D){
     ReLU_Layer * layer=malloc(sizeof(ReLU_Layer));
-#pragma acc enter data create(layer[0:1])
+
     layer->in_width=W;
     layer->in_height=H;
     layer->in_depth=D;
@@ -98,7 +82,11 @@ ReLU_Layer * make_relu_layer(int W, int H, int D){
     layer->out_width=W;
     layer->out_height=H;
     layer->out_depth=D;
-#pragma acc update device(layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth) 
+    
+    layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
+    
+#pragma acc enter data copyin(layer[0:1])
+
     return layer;
 }
 
@@ -119,7 +107,7 @@ void free_relu(ReLU_Layer * l){
 
 Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
     Pool_Layer * layer = malloc(sizeof(Pool_Layer));
-#pragma acc enter data create(layer[0:1])
+
     layer->in_width=W;
     layer->in_height=H;
     layer->in_depth=D;
@@ -132,7 +120,11 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
     layer->out_width=floor((W-K+2*P)/S+1);
     layer->out_height=floor((H-K+2*P)/S+1);
     layer->out_depth=D;
-#pragma acc update device(layer->in_width,layer->in_height,layer->in_depth,layer->pool_width,layer->stride,layer->padding,layer->out_width,layer->out_height,layer->out_depth)
+
+    layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
+
+#pragma acc enter data copyin(layer[0:1])
+
     return layer;
 }
 
@@ -168,7 +160,7 @@ void free_pool(Pool_Layer * l){
 
 FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
     FC_Layer * layer = malloc(sizeof(FC_Layer));
-#pragma acc enter data create(layer[0:1])
+
     layer->in_neurons = W*H*D;
     layer->in_width=W;
     layer->in_height=H;
@@ -178,13 +170,14 @@ FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
     layer->out_height=1;
     layer->out_depth = num_neurons;
 
+    layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
+
     layer->weights = (float *) malloc(sizeof(float)*layer->in_neurons*layer->out_depth);
+    layer->bias    = (float *) malloc(sizeof(float)*layer->out_depth);
+
+#pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->weights[0:layer->in_neurons*layer->out_depth])
-
-    layer->bias = (float *) malloc(sizeof(float)*layer->out_depth);
 #pragma acc enter data create(layer->bias[0:layer->out_depth])
-
-#pragma acc update device(layer->in_neurons,layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth)
 
     return layer;
 }
@@ -206,10 +199,12 @@ void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y){
 void free_fc(FC_Layer * l){
 
 #pragma acc exit data delete(l->bias[0:l->out_depth])
-    free(l->bias);
 #pragma acc exit data delete(l->weights[0:l->in_neurons*l->out_depth])
-    free(l->weights);
 #pragma acc exit data delete(l[0:1])
+
+
+    free(l->bias);
+    free(l->weights);
     free(l);
 }
 
@@ -294,7 +289,7 @@ int load_fc(FC_Layer *l, const char *filename) {
 Softmax_Layer * make_softmax_layer(int W, int H, int D){
 
     Softmax_Layer * layer = malloc(sizeof(Softmax_Layer));
-#pragma acc enter data create(layer[0:1])
+
     layer->in_width = W;
     layer->in_height = H;
     layer->in_depth = D;
@@ -302,9 +297,13 @@ Softmax_Layer * make_softmax_layer(int W, int H, int D){
     layer->out_width = 1;
     layer->out_height = 1;
     layer->out_depth = H*W*D;
+
+    layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
+
     layer->likelihoods = (float*) malloc(sizeof(float)*layer->out_depth);
+
+#pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->likelihoods[0:layer->out_depth])
-#pragma acc update device(layer->in_width,layer->in_height,layer->in_depth,layer->out_width,layer->out_height,layer->out_depth)
 
     return layer;
 }
@@ -338,7 +337,8 @@ void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
 void free_softmax(Softmax_Layer * l){
 
 #pragma acc exit data delete(l->likelihoods[0:l->out_depth])
-    free(l->likelihoods);
 #pragma acc exit data delete(l[0:1])
+
+    free(l->likelihoods);
     free(l);
 }

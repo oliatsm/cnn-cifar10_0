@@ -150,32 +150,31 @@ int main(){
     load_conv(L4,"./snapshot/layer4_conv.txt");
     load_conv(L7,"./snapshot/layer7_conv.txt");
     load_fc(L10,"./snapshot/layer10_fc.txt");
-    
-    //Allocate Outputs
-    float* restrict O1 = malloc(sizeof(float)*L1->out_width*L1->out_height*L1->out_depth);
-#pragma acc enter data create(O1[0:L1->out_width*L1->out_height*L1->out_depth])
-    float* restrict O2 = malloc(sizeof(float)*L2->out_width*L2->out_height*L2->out_depth);
-#pragma acc enter data create(O2[0:L2->out_width*L2->out_height*L2->out_depth])
-    float* restrict O3 = malloc(sizeof(float)*L3->out_width*L3->out_height*L3->out_depth);
-#pragma acc enter data create(O3[0:L3->out_width*L3->out_height*L3->out_depth])
-    float* restrict O4 = malloc(sizeof(float)*L4->out_width*L4->out_height*L4->out_depth);
-#pragma acc enter data create(O4[0:L4->out_width*L4->out_height*L4->out_depth])
-    float* restrict O5 = malloc(sizeof(float)*L5->out_width*L5->out_height*L5->out_depth);
-#pragma acc enter data create(O5[0:L5->out_width*L5->out_height*L5->out_depth])
-    float* restrict O6 = malloc(sizeof(float)*L6->out_width*L6->out_height*L6->out_depth);
-#pragma acc enter data create(O6[0:L6->out_width*L6->out_height*L6->out_depth])
-    float* restrict O7 = malloc(sizeof(float)*L7->out_width*L7->out_height*L7->out_depth);
-#pragma acc enter data create(O7[0:L7->out_width*L7->out_height*L7->out_depth])
-    float* restrict O8 = malloc(sizeof(float)*L8->out_width*L8->out_height*L8->out_depth);
-#pragma acc enter data create(O8[0:L8->out_width*L8->out_height*L8->out_depth])
-    float* restrict O9 = malloc(sizeof(float)*L9->out_width*L9->out_height*L9->out_depth);
-#pragma acc enter data create(O9[0:L9->out_width*L9->out_height*L9->out_depth])
-    float* restrict O10 = malloc(sizeof(float)*L10->out_depth*L10->in_neurons);
-#pragma acc enter data create(O10[0:L10->out_width*L10->out_height*L10->out_depth])
-    float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_depth);
-#pragma acc enter data create(O11[0:NUM_IMAGES][0:L11->out_depth])
 
-// int i=1;
+    //Allocate Outputs
+    float* restrict O1 = malloc(sizeof(float)*L1->out_size);
+#pragma acc enter data create(O1[0:L1->out_size])
+    float* restrict O2 = malloc(sizeof(float)*L2->out_size);
+#pragma acc enter data create(O2[0:L2->out_size])
+    float* restrict O3 = malloc(sizeof(float)*L3->out_size);
+#pragma acc enter data create(O3[0:L3->out_size])
+    float* restrict O4 = malloc(sizeof(float)*L4->out_size);
+#pragma acc enter data create(O4[0:L4->out_size])
+    float* restrict O5 = malloc(sizeof(float)*L5->out_size);
+#pragma acc enter data create(O5[0:L5->out_size])
+    float* restrict O6 = malloc(sizeof(float)*L6->out_size);
+#pragma acc enter data create(O6[0:L6->out_size])
+    float* restrict O7 = malloc(sizeof(float)*L7->out_size);
+#pragma acc enter data create(O7[0:L7->out_size])
+    float* restrict O8 = malloc(sizeof(float)*L8->out_size);
+#pragma acc enter data create(O8[0:L8->out_size])
+    float* restrict O9 = malloc(sizeof(float)*L9->out_size);
+#pragma acc enter data create(O9[0:L9->out_size])
+    float* restrict O10 = malloc(sizeof(float)*L10->out_size);
+#pragma acc enter data create(O10[0:L10->out_size])
+    float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_size);
+#pragma acc enter data create(O11[0:NUM_IMAGES][0:L11->out_size])
+
     //Net Forward
     t1 = clock();
     for(int i=0;i<NUM_IMAGES;i++){
@@ -224,27 +223,27 @@ int main(){
 
     printf("Net Accuracy: %.2f %% \n",100*(float)correct_label/NUM_IMAGES);
 
-#pragma acc exit data delete(O11[0:NUM_IMAGES][0:L11->out_depth])
+#pragma acc exit data delete(O11[0:NUM_IMAGES][0:L11->out_size])
     free(O11);
-#pragma acc exit data delete(O10[0:L10->out_width*L10->out_height*L10->out_depth])
+#pragma acc exit data delete(O10[0:L10->out_size])
     free(O10);
-#pragma acc exit data delete(O9[0:L9->out_width*L9->out_height*L9->out_depth])
+#pragma acc exit data delete(O9[0:L9->out_size])
     free(O9);
-#pragma acc exit data delete(O8[0:L8->out_width*L8->out_height*L8->out_depth])    
+#pragma acc exit data delete(O8[0:L8->out_size])    
     free(O8);
-#pragma acc exit data delete(O7[0:L7->out_width*L7->out_height*L7->out_depth])
+#pragma acc exit data delete(O7[0:L7->out_size])
     free(O7);
-#pragma acc exit data delete(O6[0:L6->out_width*L6->out_height*L6->out_depth])   
+#pragma acc exit data delete(O6[0:L6->out_size])   
     free(O6);    
-#pragma acc exit data delete(O5[0:L5->out_width*L5->out_height*L5->out_depth])
+#pragma acc exit data delete(O5[0:L5->out_size])
     free(O5);
-#pragma acc exit data delete(O4[0:L4->out_width*L4->out_height*L4->out_depth])
+#pragma acc exit data delete(O4[0:L4->out_size])
     free(O4);
-#pragma acc exit data delete(O3[0:L3->out_width*L3->out_height*L3->out_depth])
+#pragma acc exit data delete(O3[0:L3->out_size])
     free(O3);
-#pragma acc exit data delete(O2[0:L2->out_width*L2->out_height*L2->out_depth])    
+#pragma acc exit data delete(O2[0:L2->out_size])    
     free(O2);
-#pragma acc exit data delete(O1[0:L1->out_width*L1->out_height*L1->out_depth])
+#pragma acc exit data delete(O1[0:L1->out_size])
     free(O1);
 
 

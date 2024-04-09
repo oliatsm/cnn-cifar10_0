@@ -63,6 +63,8 @@ typedef struct conv_layer {
     int out_height;
     int out_depth;
 
+    int out_size;
+
     float *weights;
     float *bias;
 
@@ -76,6 +78,8 @@ typedef struct relu_layer {
     int out_width;
     int out_height;
     int out_depth;
+
+    int out_size;
 
 }ReLU_Layer;
 
@@ -92,6 +96,8 @@ typedef struct pool_layer {
     int out_height;
     int out_depth;
 
+    int out_size;
+
 }Pool_Layer;
 
 typedef struct fc_layer {
@@ -104,6 +110,8 @@ typedef struct fc_layer {
     int out_width;
     int out_height;
     int out_depth;
+
+    int out_size;
 
     float * weights;
     float * bias;
@@ -118,6 +126,8 @@ typedef struct softmax_layer {
     int out_width;
     int out_height;
     int out_depth;
+
+    int out_size;
 
     float * likelihoods;
 

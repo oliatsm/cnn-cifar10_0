@@ -73,8 +73,9 @@ printf("After\n Pooling:(%d,%d,%d)->(%d,%d,%d)\n",
 
 //Test6: add 1 to Weights, then copy to the host
 void test6(FC_Layer * l){
-    int size = l->in_neurons*l->out_depth;
-
+    
+int size = l->in_neurons*l->out_depth;
+arr2txt(l->weights,1,size,"FC-host.txt");
 #pragma acc parallel loop copyin(size) present(l)
     for(int i=0;i<size;i++){
         l->weights[i]+=1;
@@ -93,7 +94,7 @@ void test7(Softmax_Layer * l){
     }
 #pragma acc update self(l->likelihoods[0:l->out_depth])
 
-arr2txt(l->likelihoods,1,l->out_depth,"likelihoods-d.txt");
+arr2txt(l->likelihoods,1,l->out_depth,"L11-like-device.txt");
 
 }
 
