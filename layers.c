@@ -1,11 +1,14 @@
 #include "layers.h"
 
-//W: input Width, H: input height, D: input depth, K: filter width and height
-// M: output feature maps, S: stride, P: zerro padding
+// Creates a convolutional layer.
+// W: input Width, H: input height, D: input depth, K: filter width and height
+// M: output feature maps, S: stride, P: zero padding
+// Returns a pointer to the created convolutional layer.
 Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
-    
+    // Allocate memory for the convolutional layer struct
     Conv_Layer *layer=malloc(sizeof(Conv_Layer));
 
+    // Initialize layer parameters
     layer->in_width=W;
     layer->in_height=H;
     layer->in_depth=D;
@@ -23,9 +26,11 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
 
     layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
 
-    layer->weights=malloc(sizeof(float)*K*K*M*D);
-    layer->bias=malloc(sizeof(float)*M);
+    // Allocate memory for weights and bias arrays
+    layer->weights = malloc(sizeof(float)*K*K*M*D);
+    layer->bias = malloc(sizeof(float)*M);
 
+     // Move convolutional layer data to device memory
 #pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->weights[0:K*K*M*D])
 #pragma acc enter data create(layer->bias[0:M])
@@ -33,47 +38,58 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     return layer;
 }
 
+// Frees memory allocated for a convolutional layer.
+// l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer * l){
-    // int size = l->in_depth*l->filter_height*l->filter_width*l->num_filters;
+    // Free memory from device
 #pragma acc exit data delete(l->bias[0:l->out_depth])
-    free(l->bias);
 #pragma acc exit data delete(l->weights[0:(l->in_depth*l->filter_height*l->filter_width*l->num_filters)])
-    free(l->weights);
 #pragma acc exit data delete(l[0:1])
+
+    free(l->bias);
+    free(l->weights);
     free(l);
 }
 
+// Performs the forward pass for a convolutional layer.
+// X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
-    
-    for(int m=0;m<l->out_depth;m++){
-        int x_j=-l->padding;
+    // For each output feature map
+    for(int m=0;m<l->out_depth;m++){        
+        int x_j=-l->padding; // Input height index, increased by stride
         for(int j=0;j<l->out_height;j++, x_j+=l->stride){
-            int x_i=-l->padding;
+            int x_i=-l->padding; // Input width index, increased by stride
             for(int i=0;i<l->out_width;i++,x_i+=l->stride){
-                int y_idx=i+(l->out_width*(j+m*l->out_height));
-                // Y[y_idx]=0.0f;
+                int y_idx=i+(l->out_width*(j+m*l->out_height)); // Output index
+                // Calculate dot product of Weights*Input 
                 float sum = 0.0f;
                 for(int c=0;c<l->in_depth;c++){
                     for(int f_j=0;f_j<l->filter_height;f_j++){
                         for(int f_i=0;f_i<l->filter_width;f_i++){
-                            int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_height*l->filter_width);
+                            int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_height*l->filter_width); // Filter Index
+                            // If in range of image, else zero
                             if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<l->in_height&&(x_i+f_i)<l->in_width){
-                                int x_idx= c*l->in_height*l->in_width+(x_j+f_j)*l->in_width+(x_i+f_i);                            
+                                int x_idx= c*l->in_height*l->in_width+(x_j+f_j)*l->in_width+(x_i+f_i); // Input index
                                 sum+=l->weights[f_idx]*X[x_idx];
-                            }
-                        }
-                    }
-                }
-                sum+=l->bias[m];
-                Y[y_idx]=sum;
-            }
-        }
-    }
+                            } // if
+                        } // for f_i
+                    } // for f_j
+                } // for c
+                sum+=l->bias[m]; // Add bias
+                Y[y_idx]=sum; // Save output result
+            } // for i , x_i 
+        } // for j , x_j 
+    } //for m
 }
 
+// Creates a ReLU activation layer.
+// W: Input width, H: Input height, D: Input depth
+// Returns a pointer to the created ReLU layer.
 ReLU_Layer * make_relu_layer(int W, int H, int D){
+    // Allocate memory for the ReLU layer struct
     ReLU_Layer * layer=malloc(sizeof(ReLU_Layer));
 
+    // Initialize layer parameters
     layer->in_width=W;
     layer->in_height=H;
     layer->in_depth=D;
@@ -84,13 +100,15 @@ ReLU_Layer * make_relu_layer(int W, int H, int D){
     
     layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
     
+    // Move ReLU layer data to device memory
 #pragma acc enter data copyin(layer[0:1])
 
     return layer;
 }
 
+// Performs the forward pass for a ReLU activation layer.
+// X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X,ReLU_Layer * l,float * restrict Y){
-
     int size = l->out_depth*l->in_height*l->in_width;
 // #pragma acc parallel loop present(X,l,Y) copyin(size)
     for(int i=0;i<size;i++){
@@ -98,15 +116,23 @@ void relu_forward(float* restrict X,ReLU_Layer * l,float * restrict Y){
     }
 }
 
+// Frees memory allocated for a ReLU activation layer.
+// l: Pointer to the ReLU layer to be freed.
 void free_relu(ReLU_Layer * l){
-
+    // Free memory from device
 #pragma acc exit data delete(l[0:1])
     free(l);
 }
 
+// Creates a max pooling layer.
+// W: Input width, H: Input height, D: Input depth
+// K: Pooling width and height, S: Stride, P: Zero padding
+// Returns a pointer to the created max pooling layer.
 Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
+    // Allocate memory for the max pooling layer struct
     Pool_Layer * layer = malloc(sizeof(Pool_Layer));
 
+    // Initialize layer parameters
     layer->in_width=W;
     layer->in_height=H;
     layer->in_depth=D;
@@ -122,44 +148,57 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
 
     layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
 
+    // Move max pooling layer data to device memory
 #pragma acc enter data copyin(layer[0:1])
 
     return layer;
 }
 
-
+// Performs the forward pass for a max pooling layer.
+// X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
+    // For each output feature map
     for(int m=0;m<l->out_depth;m++){
-        int x_j=-l->padding;
+        int x_j=-l->padding; // Input height index, increased by stride
         for(int j=0;j<l->out_height;x_j+=l->stride,j++){
-            int x_i=-l->padding;
+            int x_i=-l->padding; // Input width index, increased by stride
             for(int i =0; i<l->out_width;x_i+=l->stride,i++){
-                int y_idx = i+l->out_width*(j+m*l->out_height);
+                int y_idx = i+l->out_width*(j+m*l->out_height); // Output index
+                // Find Max in pooling filter
                 float max = -INFINITY;
                 for(int p_j=0;p_j<l->pool_width;p_j++){
                     for(int p_i=0;p_i<l->pool_width;p_i++){
-                        int x_idx = (x_i+p_i) + ((x_j+p_j)+m*l->in_height)*l->in_width;
+                        int x_idx = (x_i+p_i) + ((x_j+p_j)+m*l->in_height)*l->in_width; //Input index
+                        //If in range of input
                         if((x_i+p_i)>=0&&(x_j+p_j)>=0&&(x_i+p_i)<l->in_width&&(x_j+p_j)<l->in_height){
                             if(X[x_idx]>max){
                                 max=X[x_idx];
-                            }
-                        }
-                    }
-                }
+                            } //if max
+                        }   // if in range
+                    }   // for p_i
+                }   // for p_j
                 Y[y_idx]=max;
-            }
-        }
-    }
+            } // for i, x_i
+        }   // for j, x_j
+    }   // for m
 }
 
+// Frees memory allocated for a max pooling layer.
+// l: Pointer to the max pooling layer to be freed.
 void free_pool(Pool_Layer * l){
+    // Free memory from device
 #pragma acc exit data delete(l[0:1])
     free(l);
 }
 
+// Creates a fully connected layer.
+// W: Input width, H: Input height, D: Input depth, num_neurons: Number of output neurons
+// Returns a pointer to the created fully connected layer.
 FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
+    // Allocate memory for the fully connected layer struct
     FC_Layer * layer = malloc(sizeof(FC_Layer));
 
+    // Initialize layer parameters
     layer->in_neurons = W*H*D;
     layer->in_width=W;
     layer->in_height=H;
@@ -172,8 +211,9 @@ FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
     layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
 
     layer->weights = (float *) malloc(sizeof(float)*layer->in_neurons*layer->out_depth);
-    layer->bias    = (float *) malloc(sizeof(float)*layer->out_depth);
+    layer->bias = (float *) malloc(sizeof(float)*layer->out_depth);
 
+    // Move fully connected layer data to device memory
 #pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->weights[0:layer->in_neurons*layer->out_depth])
 #pragma acc enter data create(layer->bias[0:layer->out_depth])
@@ -181,34 +221,39 @@ FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons){
     return layer;
 }
 
+// Performs the forward pass for a fully connected layer.
+// X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y){
-
+    // For every output neuron
     for(int i = 0; i < l->out_depth;i++) {
-            float dot = 0.0f;
-            for(int j = 0; j < l->in_neurons; j++) {
-                int w_idx= j+ i*l->in_neurons;
-                dot += X[j]*l->weights[w_idx];
-            }
-            dot += l->bias[i];
-            Y[i] = dot;
+        // Calculate dot product of input and weights
+        float sum = 0.0f;
+        for(int j = 0; j < l->in_neurons; j++) {
+            int w_idx= j+ i*l->in_neurons; // Weight index
+            sum += X[j]*l->weights[w_idx];
         }
+        sum += l->bias[i]; // add bias
+        Y[i] = sum;
+    }
 
 }
 
+// Frees memory allocated for a fully connected layer.
+// l: Pointer to the fully connected layer to be freed.
 void free_fc(FC_Layer * l){
-
+    // Free memory from device
 #pragma acc exit data delete(l->bias[0:l->out_depth])
 #pragma acc exit data delete(l->weights[0:l->in_neurons*l->out_depth])
 #pragma acc exit data delete(l[0:1])
-
-
     free(l->bias);
     free(l->weights);
     free(l);
 }
 
+// Loads pre-trained weights and biases for a convolutional layer from a file.
+// l: Pointer to the convolutional layer, file_name: Name of the file containing pre-trained weights and biases
+// Returns 0 on success, 1 on failure.
 int load_conv(Conv_Layer* l ,char * file_name){
-    
     int filter_width, filter_height, depth, filters;
     
     FILE *fin = fopen(file_name, "r");
@@ -217,14 +262,17 @@ int load_conv(Conv_Layer* l ,char * file_name){
         return 1;
     }
 
+    // Read layer parameters from the file
     fscanf(fin, "%d %d %d %d", &filter_width, &filter_height, &depth, &filters);
 
+    // Validate layer parameters
     assert(filter_width==l->filter_width);
     assert(filter_height==l->filter_height);
     assert(depth==l->in_depth);
     assert(filters==l->num_filters);
 
     double val;
+    // Read weights from the file
     for(int f = 0; f < filters; f++) {
         for (int i = 0; i < filter_width; i++) {
             for (int j = 0; j < filter_height; j++) {
@@ -235,9 +283,9 @@ int load_conv(Conv_Layer* l ,char * file_name){
                 }
             }
         }
-
     }
 
+    // Read biases from the file
     for(int d = 0; d < filters; d++) {
         fscanf(fin, "%lf", &val);
         int idx=d;
@@ -245,11 +293,16 @@ int load_conv(Conv_Layer* l ,char * file_name){
     }
 
     fclose(fin);
+
+    // Update device memory with loaded weights and biases
 #pragma acc update device(l->weights[0:l->filter_width*l->filter_height*l->num_filters*l->in_depth],l->bias[0:l->out_depth])
 
     return 0;
 }
 
+// Loads pre-trained weights and biases for a fully connected layer from a file.
+// l: Pointer to the fully connected layer, filename: Name of the file containing pre-trained weights and biases
+// Returns 0 on success, 1 on failure.
 int load_fc(FC_Layer *l, const char *filename) {
     
     FILE *fin = fopen(filename, "r");
@@ -260,35 +313,51 @@ int load_fc(FC_Layer *l, const char *filename) {
 
     int num_inputs;
     int output_depth;
+    // Read layer parameters from the file
     fscanf(fin, "%d %d", &num_inputs, &output_depth);
+    
+    // Check if the dimensions match the layer dimensions
     assert(output_depth == l->out_depth);
     assert(num_inputs == l->in_neurons);
 
     double val;
+    // Read weights from the file
     for(int i = 0; i < l->out_depth; i++){  
         for(int h=0;h<l->in_height;h++){
             for(int w=0;w<l->in_width;w++){
                 for(int d=0;d<l->in_depth;d++){
+                    // Compute weights index: weights are stored first by depth.
+                    // Convert it to match the row-major array.
                     int idx = w+(h+d*l->in_height)*l->in_width+i*l->in_neurons;
                     fscanf(fin, "%lf", &val);
                     l->weights[idx]=(float)val;
-        }}}
+                }
+            }
+        }
     }
+
+    // Read biases from the file
     for(int i = 0; i < l->out_depth; i++) {
         fscanf(fin, "%lf", &val);
         l->bias[i]=(float)val;
     }
 
     fclose(fin);
+
+    // Update device memory with loaded weights and biases
 #pragma acc update device(l->weights[0:l->in_neurons*l->out_depth],l->bias[0:l->out_depth])
 
     return 0;
 }
 
+// Creates a softmax layer.
+// W: Input width, H: Input height, D: Input depth
+// Returns a pointer to the created softmax layer.
 Softmax_Layer * make_softmax_layer(int W, int H, int D){
-
+    // Allocate memory for the softmax layer struct
     Softmax_Layer * layer = malloc(sizeof(Softmax_Layer));
 
+    // Initialize layer parameters
     layer->in_width = W;
     layer->in_height = H;
     layer->in_depth = D;
@@ -301,26 +370,28 @@ Softmax_Layer * make_softmax_layer(int W, int H, int D){
 
     layer->likelihoods = (float*) malloc(sizeof(float)*layer->out_depth);
 
+    // Move softmax layer data to device memory
 #pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->likelihoods[0:layer->out_depth])
 
     return layer;
 }
 
+// Performs the forward pass for a softmax layer.
+// X: Input data, l: Softmax layer, Y: Output data
 void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
-
     // Compute max activation
-    float amax = X[0]; 
+    float max = X[0]; 
     for(int i = 1; i < l->out_depth; i++) {
-        if (X[i] > amax) {
-            amax = X[i];
+        if (X[i] > max) {
+            max = X[i];
         }
     }
 
     // Compute exponentials and total
     float total = 0.0f;
     for(int i = 0; i < l->out_depth; i++) {
-        float e = exp(X[i] - amax);
+        float e = exp(X[i] - max);
         total += e;
         l->likelihoods[i] = e;
     }
@@ -333,8 +404,10 @@ void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
 
 }
 
+// Frees memory allocated for a softmax layer.
+// l: Pointer to the softmax layer to be freed.
 void free_softmax(Softmax_Layer * l){
-
+    // Free memory from device
 #pragma acc exit data delete(l->likelihoods[0:l->out_depth])
 #pragma acc exit data delete(l[0:1])
 
