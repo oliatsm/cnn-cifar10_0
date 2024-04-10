@@ -235,7 +235,6 @@ void fc_forward(float * restrict X, FC_Layer * l,float * restrict Y){
         sum += l->bias[i]; // add bias
         Y[i] = sum;
     }
-
 }
 
 // Frees memory allocated for a fully connected layer.
