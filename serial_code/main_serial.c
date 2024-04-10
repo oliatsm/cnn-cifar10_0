@@ -93,7 +93,6 @@ int load_data(float** image, int * label, int N) {
     return 0;
 }
 
-
 void arr2txt(float *arr, int N,int M, char * file_name);
 
 int main(){
@@ -101,10 +100,13 @@ int main(){
     clock_t t1,t2; 
     printf("CNN for %d images\n",NUM_IMAGES);
 
+    // Image labels 
     int labels[NUM_IMAGES];
     
+    // Input: Image Data
     float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
 
+    // Load Image Data 
     load_data(input,labels,NUM_IMAGES);
 
     // Network Layers
@@ -189,7 +191,6 @@ int main(){
     free(O9);    
     free(O8);
     free(O7);
-    
     free(O6);    
     free(O5);
     free(O4);
@@ -197,30 +198,21 @@ int main(){
     free(O2);
     free(O1);
 
-    free(L11->likelihoods);
-    free(L11);
+    free_softmax(L11);
+    free_fc(L10);
 
-    free(L10->bias);
-    free(L10->weights);
-    free(L10);
+    free_pool(L9);
+    free_relu(L8);
+    free_conv(L7);
 
-    free(L9);
-    free(L8);
-    free(L7->bias);
-    free(L7->weights);
-    free(L7);
+    free_pool(L6);
+    free_relu(L5);
+    free_conv(L4);
 
-    free(L6);
-    free(L5);
-    free(L4->bias);
-    free(L4->weights);
-    free(L4);
-    
-    free(L3);
-    free(L2);
-    free(L1->bias);
-    free(L1->weights);
-    free(L1);
+    free_pool(L3);
+    free_relu(L2);
+    free_conv(L1);
+
     free(input);
     printf("END!\n");
 

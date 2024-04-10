@@ -1,7 +1,7 @@
 #ifndef TESTS_H
 #define TESTS_H
 #include "layers.h"
-
+void test1(float **input,int num,int pixels);
 void test2(Conv_Layer * l);
 void test3(Conv_Layer * l,int size);
 void test4(ReLU_Layer * l);

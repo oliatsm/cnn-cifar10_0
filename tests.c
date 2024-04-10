@@ -1,21 +1,21 @@
 #include "tests.h"
-/*
-    #pragma acc parallel loop present(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
-    for (int i=0;i<NUM_IMAGES;i++){
-        for (int j=0;j<IMAGE_PIXELS;j++){
+void test1(float **input,int num,int pixels){
+    #pragma acc parallel loop present(input[0:num][0:pixels])
+    for (int i=0;i<num;i++){
+        for (int j=0;j<pixels;j++){
             input[i][j]+=1;
         }
     }
-    #pragma acc update self (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+    // #pragma acc update self (input[0:num][0:pixels])
 
-    for (int i=0;i<NUM_IMAGES;i+=5000){
-        for (int j=0;j<IMAGE_PIXELS;j+=100){
+    for (int i=0;i<num;i+=5000){
+        for (int j=0;j<pixels;j+=100){
             printf("%f\n",input[i][j]);
     }}
-    */
+}
 
 
-//Test2: Add 1 to all Conv parameters on host, and load corrext data from device
+//Test2: Add 1 to all Conv parameters on host, and load correct data from device
 void test2(Conv_Layer * l){
 printf("L1:Conv:(%d,%d,%d)->(%d,%d,%d)\n\tFilters:(%d,%d)x%d s:%d,p:%d\n",
     l->in_width,l->in_height,l->in_depth,l->out_width,l->out_height,l->out_depth,

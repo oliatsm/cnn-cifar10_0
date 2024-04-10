@@ -96,42 +96,25 @@ int load_data(float** image, int * label, int N) {
     return 0;
 }
 
-void arr2txt(float *arr, int N,int M, char * file_name) {
-    FILE *file = fopen(file_name, "w");
-
-    if (file == NULL) {
-        printf("Error opening file!\n");
-        return;
-    }
-    fprintf(file,"%d,%d,%d\n",N,N,M);
-    for (int k = 0; k < M; ++k) {
-        for (int j = 0; j < N; ++j) {
-            for (int i = 0; i < N; ++i) {
-                int idx = ((j*N)+i)+(N*N)*k;
-                fprintf(file, "%f ", arr[idx]);
-                // printf("%d\n",idx);
-            }
-            fprintf(file, "\n");
-        }
-    }
-
-    fclose(file);
-}
+void arr2txt(float *arr, int N,int M, char * file_name);
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     clock_t t1,t2; 
     printf("CNN for %d images\n",NUM_IMAGES);
 
+    // Image labels (only on host)
     int labels[NUM_IMAGES];
     
+    // Input: Image Data
     float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
-    #pragma acc enter data create(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
-
-    load_data(input,labels,NUM_IMAGES);
-    #pragma acc update device (input[0:NUM_IMAGES][0:IMAGE_PIXELS])
-
     
+    // Load Image Data 
+    load_data(input,labels,NUM_IMAGES);
+
+    //Move Image Data to Device
+    #pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+
     // Network Layers
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
@@ -151,7 +134,7 @@ int main(){
     load_conv(L7,"./snapshot/layer7_conv.txt");
     load_fc(L10,"./snapshot/layer10_fc.txt");
 
-    //Allocate Outputs
+    //Allocate Outputs and allocate outputs on device
     float* restrict O1 = malloc(sizeof(float)*L1->out_size);
 #pragma acc enter data create(O1[0:L1->out_size])
     float* restrict O2 = malloc(sizeof(float)*L2->out_size);
@@ -246,7 +229,6 @@ int main(){
 #pragma acc exit data delete(O1[0:L1->out_size])
     free(O1);
 
-
     free_softmax(L11);
     free_fc(L10);
 
@@ -269,3 +251,24 @@ int main(){
     return 0;
 }
 
+void arr2txt(float *arr, int N,int M, char * file_name) {
+    FILE *file = fopen(file_name, "w");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file,"%d,%d,%d\n",N,N,M);
+    for (int k = 0; k < M; ++k) {
+        for (int j = 0; j < N; ++j) {
+            for (int i = 0; i < N; ++i) {
+                int idx = ((j*N)+i)+(N*N)*k;
+                fprintf(file, "%f ", arr[idx]);
+                // printf("%d\n",idx);
+            }
+            fprintf(file, "\n");
+        }
+    }
+
+    fclose(file);
+}
