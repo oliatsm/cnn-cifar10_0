@@ -8,12 +8,13 @@
 #include "layers_serial.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 1200//Number of Input Data
-#define NUM_CLASSES 10 // Number of Classes, CIFAR-10
+#define NUM_IMAGES 1200  // Number of Input Data
+#define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
-#define MAX_TRAINING_DATA 50000
-#define MAX_BATCH_DATA 10000
+#define MAX_TRAINING_DATA 50000 // Max number of training data
+#define MAX_BATCH_DATA 10000    // Max number of samples per batch    
+#define LINE_SIZE 3073  // Bytes of one line in the binary data files
 
 
 // Folder for .bin files of cifar dataset on my system.
@@ -29,7 +30,6 @@ int load_data(float** image, int * label, int N) {
 
     // printf("Batches: %d, Samples: %d.\n",batches,samples);
     char file_name[1024];
-    size_t LINE_SIZE = 3073;
     
     //Loading the whole batches. If we need less than 10.000 images, the condition (b<batches) ends the loop.
     for (int b=1;b<batches;b++){
@@ -43,8 +43,8 @@ int load_data(float** image, int * label, int N) {
             exit(EXIT_FAILURE);
         }
 
-        uint8_t data[LINE_SIZE];
         for (int i = 0; i < MAX_BATCH_DATA; i++) {
+            uint8_t data[LINE_SIZE];
 
             size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
             assert(bytesRead == LINE_SIZE);
@@ -55,7 +55,6 @@ int load_data(float** image, int * label, int N) {
                 image[n][j] = (float)data[data_i++]/255.0-0.5;
             }
             n++;
-            //printf("%d ",n);
         }
         assert((n%MAX_BATCH_DATA)==0);
         fclose(fbin);
@@ -74,8 +73,8 @@ int load_data(float** image, int * label, int N) {
                 exit(EXIT_FAILURE);
             }
 
-            uint8_t data[LINE_SIZE];
             for (int i = 0; i < samples; i++) {
+                uint8_t data[LINE_SIZE];
 
                 size_t bytesRead = fread(data, 1, LINE_SIZE, fbin);
                 assert(bytesRead == LINE_SIZE);
@@ -93,11 +92,13 @@ int load_data(float** image, int * label, int N) {
     return 0;
 }
 
+// Test Function
 void arr2txt(float *arr, int N,int M, char * file_name);
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     clock_t t1,t2; 
+    printf("Serial Code\n");
     printf("CNN for %d images\n",NUM_IMAGES);
 
     // Image labels 
@@ -219,6 +220,7 @@ int main(){
     return 0;
 }
 
+//Print an array to text file
 void arr2txt(float *arr, int N,int M, char * file_name) {
     FILE *file = fopen(file_name, "w");
 
@@ -232,7 +234,6 @@ void arr2txt(float *arr, int N,int M, char * file_name) {
             for (int i = 0; i < N; ++i) {
                 int idx = ((j*N)+i)+(N*N)*k;
                 fprintf(file, "%f ", arr[idx]);
-                // printf("%d\n",idx);
             }
             fprintf(file, "\n");
         }

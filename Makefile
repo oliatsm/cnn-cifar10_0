@@ -1,7 +1,7 @@
 # Makefile for cnn-cifar10 project
 
 CC = nvc
-CFLAGS = -acc -Minfo=acc -c11 -Wall -Wextra -march=native
+CFLAGS = -acc -Minfo=acc -c11 -Wall -Wextra -march=native -O0
 
 SRC = main.c layers.c malloc2D.c 
 EXECUTABLE = cnn-cifar10
