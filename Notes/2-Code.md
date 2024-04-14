@@ -23,6 +23,7 @@ Karpathi - Convjs
     * Snapshot
 
 ## Κυρίως πρόγραμμα
+![Flow Chart](image/flow-chart-en.png)
 
 Memory allocations
 
