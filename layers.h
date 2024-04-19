@@ -116,7 +116,6 @@ typedef struct pool_layer {
 
     int pool_width;     // Pooling width
     int stride;         // Stride
-    // int padding;        // Padding
 
     int out_width;
     int out_height;
@@ -162,7 +161,7 @@ typedef struct softmax_layer {
 // Functions to create layers
 Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P);
 ReLU_Layer * make_relu_layer(int W, int H, int D);
-Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S/)/, int P);
+Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S);
 FC_Layer   * make_fc_layer(int W, int H, int D,int num_neurons);
 Softmax_Layer * make_softmax_layer(int W, int H, int D);
 
