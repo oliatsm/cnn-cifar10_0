@@ -128,7 +128,7 @@ void free_relu(ReLU_Layer * l){
 // W: Input width, H: Input height, D: Input depth
 // K: Pooling width and height, S: Stride, P: Zero padding
 // Returns a pointer to the created max pooling layer.
-Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
+Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S){//, int P){
     // Allocate memory for the max pooling layer struct
     Pool_Layer * layer = malloc(sizeof(Pool_Layer));
 
@@ -140,10 +140,12 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
     layer->pool_width=K;
 
     layer->stride=S;
-    layer->padding=P;
+    // layer->padding=P;
 
-    layer->out_width=floor((W-K+2*P)/S+1);
-    layer->out_height=floor((H-K+2*P)/S+1);
+    layer->out_width=floor((W-K)/S+1);
+    layer->out_height=floor((H-K)/S+1);
+    // layer->out_width=floor((W-K+2*P)/S+1);
+    // layer->out_height=floor((H-K+2*P)/S+1);
     layer->out_depth=D;
 
     layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
@@ -159,9 +161,9 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
     // For each output feature map
     for(int m=0;m<l->out_depth;m++){
-        int x_j=-l->padding; // Input height index, increased by stride
+        int x_j=0;//-l->padding; // Input height index, increased by stride
         for(int j=0;j<l->out_height;x_j+=l->stride,j++){
-            int x_i=-l->padding; // Input width index, increased by stride
+            int x_i=0;//-l->padding; // Input width index, increased by stride
             for(int i =0; i<l->out_width;x_i+=l->stride,i++){
                 int y_idx = i+l->out_width*(j+m*l->out_height); // Output index
                 // Find Max in pooling filter
