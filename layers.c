@@ -14,7 +14,6 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     layer->in_depth=D;
 
     layer->filter_width=K;
-    layer->filter_height=K;
     layer->num_filters=M;
 
     layer->stride =S;
@@ -43,7 +42,7 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
 void free_conv(Conv_Layer * l){
     // Free memory from device
 #pragma acc exit data delete(l->bias[0:l->out_depth])
-#pragma acc exit data delete(l->weights[0:(l->in_depth*l->filter_height*l->filter_width*l->num_filters)])
+#pragma acc exit data delete(l->weights[0:(l->in_depth*l->filter_width*l->filter_width*l->num_filters)])
 #pragma acc exit data delete(l[0:1])
 
     free(l->bias);
@@ -64,9 +63,9 @@ void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
                 // Calculate dot product of Weights*Input 
                 float sum = 0.0f;
                 for(int c=0;c<l->in_depth;c++){
-                    for(int f_j=0;f_j<l->filter_height;f_j++){
+                    for(int f_j=0;f_j<l->filter_width;f_j++){
                         for(int f_i=0;f_i<l->filter_width;f_i++){
-                            int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_height*l->filter_width); // Filter Index
+                            int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_width*l->filter_width); // Filter Index
                             // If in range of image, else zero
                             if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<l->in_height&&(x_i+f_i)<l->in_width){
                                 int x_idx= c*l->in_height*l->in_width+(x_j+f_j)*l->in_width+(x_i+f_i); // Input index
@@ -264,7 +263,7 @@ int load_conv(Conv_Layer* l ,char * file_name){
 
     // Validate layer parameters
     assert(filter_width==l->filter_width);
-    assert(filter_height==l->filter_height);
+    assert(filter_height==l->filter_width);
     assert(depth==l->in_depth);
     assert(filters==l->num_filters);
 
@@ -272,10 +271,10 @@ int load_conv(Conv_Layer* l ,char * file_name){
     // Read weights from the file
     for(int f = 0; f < filters; f++) {
         for (int i = 0; i < filter_width; i++) {
-            for (int j = 0; j < filter_height; j++) {
+            for (int j = 0; j < filter_width; j++) {
                 for (int d = 0; d < depth; d++) {
                     fscanf(fin, "%lf", &val);
-                    int idx=i+j*filter_width+(d+f*depth)*(filter_width*filter_height);
+                    int idx=i+j*filter_width+(d+f*depth)*(filter_width*filter_width);
                     l->weights[idx]=(float)val;
                 }
             }
@@ -292,7 +291,7 @@ int load_conv(Conv_Layer* l ,char * file_name){
     fclose(fin);
 
     // Update device memory with loaded weights and biases
-#pragma acc update device(l->weights[0:l->filter_width*l->filter_height*l->num_filters*l->in_depth],l->bias[0:l->out_depth])
+#pragma acc update device(l->weights[0:l->filter_width*l->filter_width*l->num_filters*l->in_depth],l->bias[0:l->out_depth])
 
     return 0;
 }

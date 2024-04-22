@@ -22,7 +22,6 @@
 // Layer 3: Pooling
 #define K3 2       // Pooling Width Height
 #define S3 2       // Stride
-#define P3 0       // Padding
 
 // Layer 4: Convolutional
 #define K4 5       // Filter Width Height
@@ -35,7 +34,6 @@
 // Layer 6: Pooling
 #define K6 2       // Pooling Width Height
 #define S6 2       // Stride
-#define P6 0       // Padding
 
 // Layer 7: Convolutional
 #define K7 5       // Filter Width Height
@@ -48,7 +46,6 @@
 // Layer 9: Pooling
 #define K9 2       // Pooling Width Height
 #define S9 2       // Stride
-#define P9 0       // Padding
 
 // Layer 10: Fully Connected
 #define M10 10     // Output Neurons
@@ -81,7 +78,6 @@ typedef struct conv_layer {
 
     int num_filters;    // Number of filters (output depth)
     int filter_width;   // Filter width
-    int filter_height;  // Filter height
     int stride;         // Stride
     int padding;        // Padding
 
