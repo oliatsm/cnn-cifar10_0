@@ -14,7 +14,6 @@ Conv_Layer * make_conv_layer(int W, int H, int D,int K, int M, int S, int P){
     layer->in_depth=D;
 
     layer->filter_width=K;
-    layer->filter_height=K;
     layer->num_filters=M;
 
     layer->stride =S;
@@ -55,9 +54,9 @@ void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
                 // Calculate dot product of Weights*Input 
                 float sum = 0.0f;
                 for(int c=0;c<l->in_depth;c++){
-                    for(int f_j=0;f_j<l->filter_height;f_j++){
+                    for(int f_j=0;f_j<l->filter_width;f_j++){
                         for(int f_i=0;f_i<l->filter_width;f_i++){
-                            int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_height*l->filter_width); // Filter Index
+                            int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_width*l->filter_width); // Filter Index
                             // If in range of image, else zero
                             if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<l->in_height&&(x_i+f_i)<l->in_width){
                                 int x_idx= c*l->in_height*l->in_width+(x_j+f_j)*l->in_width+(x_i+f_i); // Input index
@@ -113,9 +112,9 @@ void free_relu(ReLU_Layer * l){
 
 // Creates a max pooling layer.
 // W: Input width, H: Input height, D: Input depth
-// K: Pooling width and height, S: Stride, P: Zero padding
+// K: Pooling width and height, S: Stride
 // Returns a pointer to the created max pooling layer.
-Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
+Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S){
     // Allocate memory for the max pooling layer struct
     Pool_Layer * layer = malloc(sizeof(Pool_Layer));
 
@@ -125,12 +124,10 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
     layer->in_depth=D;
 
     layer->pool_width=K;
-
     layer->stride=S;
-    layer->padding=P;
 
-    layer->out_width=floor((W-K+2*P)/S+1);
-    layer->out_height=floor((H-K+2*P)/S+1);
+    layer->out_width=floor((W-K)/S+1);
+    layer->out_height=floor((H-K)/S+1);
     layer->out_depth=D;
 
     layer->out_size=layer->out_width*layer->out_height*layer->out_depth;
@@ -144,9 +141,9 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S, int P){
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
     // For each output feature map
     for(int m=0;m<l->out_depth;m++){
-        int x_j=-l->padding; // Input height index, increased by stride
+        int x_j=0; // Input height index, increased by stride
         for(int j=0;j<l->out_height;x_j+=l->stride,j++){
-            int x_i=-l->padding; // Input width index, increased by stride
+            int x_i=0; // Input width index, increased by stride
             for(int i =0; i<l->out_width;x_i+=l->stride,i++){
                 int y_idx = i+l->out_width*(j+m*l->out_height); // Output index
                 // Find Max in pooling filter
@@ -241,7 +238,7 @@ int load_conv(Conv_Layer* l ,char * file_name){
 
     // Validate layer parameters
     assert(filter_width==l->filter_width);
-    assert(filter_height==l->filter_height);
+    assert(filter_height==l->filter_width);
     assert(depth==l->in_depth);
     assert(filters==l->num_filters);
 
@@ -249,10 +246,10 @@ int load_conv(Conv_Layer* l ,char * file_name){
     // Read weights from the file
     for(int f = 0; f < filters; f++) {
         for (int i = 0; i < filter_width; i++) {
-            for (int j = 0; j < filter_height; j++) {
+            for (int j = 0; j < filter_width; j++) {
                 for (int d = 0; d < depth; d++) {
                     fscanf(fin, "%lf", &val);
-                    int idx=i+j*filter_width+(d+f*depth)*(filter_width*filter_height);
+                    int idx=i+j*filter_width+(d+f*depth)*(filter_width*filter_width);
                     l->weights[idx]=(float)val;
                 }
             }

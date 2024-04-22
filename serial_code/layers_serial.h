@@ -22,7 +22,6 @@
 // Layer 3: Pooling
 #define K3 2       // Pooling Width Height
 #define S3 2       // Stride
-#define P3 0       // Padding
 
 // Layer 4: Convolutional
 #define K4 5       // Filter Width Height
@@ -35,7 +34,6 @@
 // Layer 6: Pooling
 #define K6 2       // Pooling Width Height
 #define S6 2       // Stride
-#define P6 0       // Padding
 
 // Layer 7: Convolutional
 #define K7 5       // Filter Width Height
@@ -48,12 +46,13 @@
 // Layer 9: Pooling
 #define K9 2       // Pooling Width Height
 #define S9 2       // Stride
-#define P9 0       // Padding
 
 // Layer 10: Fully Connected
 #define M10 10     // Output Neurons
 
 // Layer 11: Softmax (No parameters)
+
+//-----------------------------------
 
 // Structs representing different types of layers used in the Convolutional Neural Network (CNN).
 // These structs contain the parameters and characteristics of each layer.
@@ -66,10 +65,11 @@
 // the output volume size, used for memory allocations throughout the program.
 
 // Each struct is associated with the following functions:
-//   - make_*layer(): Creates the layer, initializes variables, and allocates arrays.
+//   - make_*layer(): Creates the layer, initializes variables and allocates arrays.
 //   - free_*layer(): Deallocates memory used by the layer.
 //   - *layer_forward(): Computes the forward pass of the layer.
 //   - load_*layer(): Loads pre-trained data from files if the layer has weight parameters.
+
 
 typedef struct conv_layer {
     int in_width;       // Input width
@@ -78,7 +78,6 @@ typedef struct conv_layer {
 
     int num_filters;    // Number of filters (output depth)
     int filter_width;   // Filter width
-    int filter_height;  // Filter height
     int stride;         // Stride
     int padding;        // Padding
 
@@ -91,7 +90,7 @@ typedef struct conv_layer {
     float *weights;     // Filter weights
     float *bias;        // Bias values
 
-} Conv_Layer;
+}Conv_Layer;
 
 typedef struct relu_layer {
     int in_width;       // Input width
@@ -113,7 +112,6 @@ typedef struct pool_layer {
 
     int pool_width;     // Pooling width
     int stride;         // Stride
-    int padding;        // Padding
 
     int out_width;      // Output width
     int out_height;     // Output height
@@ -139,7 +137,7 @@ typedef struct fc_layer {
     float *weights;     // Weight matrix
     float *bias;        // Bias values
 
-} FC_Layer;
+}FC_Layer;
 
 typedef struct softmax_layer {
     int in_width;       // Input width
@@ -154,12 +152,12 @@ typedef struct softmax_layer {
 
     float *likelihoods; // Softmax probabilities
 
-} Softmax_Layer;
+}Softmax_Layer;
 
 // Functions to create layers
 Conv_Layer *make_conv_layer(int W, int H, int D, int K, int M, int S, int P);
 ReLU_Layer *make_relu_layer(int W, int H, int D);
-Pool_Layer *make_pool_layer(int W, int H, int D, int K, int S, int P);
+Pool_Layer *make_pool_layer(int W, int H, int D, int K, int S);
 FC_Layer   *make_fc_layer(int W, int H, int D, int num_neurons);
 Softmax_Layer *make_softmax_layer(int W, int H, int D);
 
