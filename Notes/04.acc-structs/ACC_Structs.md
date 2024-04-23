@@ -100,3 +100,7 @@ void vecaddgpu( point *A, float* base ){
 ## Πρόβλημα
 
 Το παράδειγμα παραπάνω δεν δουλεύει. Δουλεύει εάν τα enter data create γίνουν στη main. [Παράδειγμα 3](acc_struct_3.c)
+
+# Other resources
+
+[openacc.examples - Hewlett Packard Enterprise](https://cpe.ext.hpe.com/docs/cce/man7/openacc.examples.7.html)
