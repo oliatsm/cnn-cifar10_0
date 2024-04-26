@@ -97,7 +97,7 @@ void arr2txt(float *arr, int N,int M, char * file_name);
 
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    clock_t t1,t2; 
+    clock_t t1,t2,ttotal = 0; 
     printf("Serial Code\n");
     printf("CNN for %d images\n",NUM_IMAGES);
 
@@ -106,11 +106,15 @@ int main(){
     
     // Input: Image Data
     float** restrict input =malloc2D(NUM_IMAGES,IMAGE_PIXELS);
-
+    t1=clock();
     // Load Image Data 
     load_data(input,labels,NUM_IMAGES);
+    t2=clock();
+    ttotal+=t2-t1;
+    printf("Load Data time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
     // Network Layers
+    t1=clock();
     Conv_Layer * L1 = make_conv_layer(N_in,N_in,C_in,K1,M1,S1,P1);
     ReLU_Layer * L2 = make_relu_layer(L1->out_width,L1->out_height,L1->out_depth);
     Pool_Layer * L3 = make_pool_layer(L2->out_width,L2->out_height,L2->out_depth,K3,S3);
@@ -122,14 +126,24 @@ int main(){
     Pool_Layer * L9 = make_pool_layer(L8->out_width,L8->out_height,L8->out_depth,K9,S9);
     FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
     Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
+    t2=clock();
+    ttotal+=t2-t1;
+
+    printf("Create Network time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     
     //Loading Layers' parameters
+    t1=clock();
     load_conv(L1,"./../snapshot/layer1_conv.txt");
     load_conv(L4,"./../snapshot/layer4_conv.txt");
     load_conv(L7,"./../snapshot/layer7_conv.txt");
     load_fc(L10,"./../snapshot/layer10_fc.txt");
+    t2=clock();
+    ttotal+=t2-t1;
+
+    printf("Load Network Parameters time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
   
     //Allocate Outputs
+    t1=clock();
     float* restrict O1 = malloc(sizeof(float)*L1->out_size);
     float* restrict O2 = malloc(sizeof(float)*L2->out_size);
     float* restrict O3 = malloc(sizeof(float)*L3->out_size);
@@ -141,6 +155,11 @@ int main(){
     float* restrict O9 = malloc(sizeof(float)*L9->out_size);
     float* restrict O10 = malloc(sizeof(float)*L10->out_size);
     float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_size);
+    t2=clock();
+    ttotal+=t2-t1;
+
+    printf("Create Ouputs time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+
 
     //Net Forward
     t1 = clock();
@@ -159,11 +178,13 @@ int main(){
         softmax_forward(O10,L11,O11[i]);
 
         }
-    t2 = clock();
+    t2 = clock();    
+    ttotal+=t2-t1;
    
     printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
     // Results
+    t1=clock();
     int predictions[NUM_IMAGES];
     for(int n=0;n<NUM_IMAGES;n++){
         int class_o = 0;
@@ -186,7 +207,13 @@ int main(){
     }
 
     printf("Net Accuracy: %.2f %% \n",100*(float)correct_label/NUM_IMAGES);
+    t2 = clock();
+    ttotal+=t2-t1;
+   
+    printf("Net Accuracy time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
+// Free memory
+    t1=clock();
     free(O11);
     free(O10);
     free(O9);    
@@ -215,6 +242,12 @@ int main(){
     free_conv(L1);
 
     free(input);
+     t2 = clock();
+    ttotal+=t2-t1;
+   
+    printf("Free memory time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+    printf("Total time:%f seconds\n",(double)(ttotal)/CLOCKS_PER_SEC);
+
     printf("END!\n");
 
     return 0;
