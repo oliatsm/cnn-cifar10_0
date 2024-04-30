@@ -119,7 +119,7 @@ int main(){
     t1=clock();
     #pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     t2=clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
 
     printf("Load Data to device time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
@@ -137,7 +137,7 @@ int main(){
     FC_Layer   *L10 = make_fc_layer(L9->out_width,L9->out_height,L9->out_depth,M10);
     Softmax_Layer *L11 = make_softmax_layer(L10->out_width,L10->out_height,L10->out_depth);
     t2=clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
 
     printf("Create Network time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     
@@ -148,7 +148,7 @@ int main(){
     load_conv(L7,"./snapshot/layer7_conv.txt");
     load_fc(L10,"./snapshot/layer10_fc.txt");
     t2=clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
 
     printf("Load Network Parameters time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     
@@ -177,7 +177,7 @@ int main(){
     float** restrict O11 = malloc2D(NUM_IMAGES,L11->out_size);
 #pragma acc enter data create(O11[0:NUM_IMAGES][0:L11->out_size])
     t2=clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
 
     printf("Create Ouputs time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
@@ -203,7 +203,7 @@ int main(){
 
         }
     t2 = clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
    
     printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
@@ -232,7 +232,7 @@ int main(){
 
     printf("Net Accuracy: %.2f %% \n",100*(float)correct_label/NUM_IMAGES);
     t2 = clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
    
     printf("Net Accuracy time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
@@ -279,7 +279,7 @@ int main(){
     #pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     free(input);
     t2 = clock();
-    ttotal+=t1-t2;
+    ttotal+=t2-t1;
    
     printf("Free memory time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
     printf("Total time:%f seconds\n",(double)(ttotal)/CLOCKS_PER_SEC);
