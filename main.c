@@ -7,11 +7,14 @@
 
 #include <openacc.h>
 
+#define BILLION 1000000000L
+
+
 #include "layers.h"
 #include "malloc2D.h"
 // #include "tests.h"
 
-#define NUM_IMAGES 50000  // Number of Input Data
+#define NUM_IMAGES 1200  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -101,6 +104,7 @@ void arr2txt(float *arr, int N,int M, char * file_name);
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     clock_t t1,t2, ttotal; 
+    struct timespec start, end;
     printf("CNN for %d images\n",NUM_IMAGES);
 
     // Image labels (only on host)
@@ -184,6 +188,8 @@ int main(){
 
     //Net Forward
     t1 = clock();
+    clock_gettime(CLOCK_REALTIME,&start);
+
     for(int i=0;i<NUM_IMAGES;i++){
 
         conv_forward(input[i],L1,O1);
@@ -202,10 +208,17 @@ int main(){
         softmax_forward(O10,L11,O11[i]);
 
         }
+
+    clock_gettime(CLOCK_REALTIME,&end);
     t2 = clock();
     ttotal+=t2-t1;
    
+    uint64_t diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+    uint64_t seconds = diff/BILLION;
+    uint64_t nanoseconds = diff-seconds*BILLION;
+
     printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
+    printf("Elapsed time: %llu,%lld sec \n",(long long unsigned int)seconds,(long long unsigned int)nanoseconds);
 
     // Results
     t1=clock();
