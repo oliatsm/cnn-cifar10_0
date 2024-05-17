@@ -104,7 +104,6 @@ void arr2txt(float *arr, int N,int M, char * file_name);
 int main(){
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     clock_t t1,t2, ttotal; 
-    struct timespec start, end;
     printf("CNN for %d images\n",NUM_IMAGES);
 
     // Image labels (only on host)
@@ -188,38 +187,30 @@ int main(){
 
     //Net Forward
     t1 = clock();
-    clock_gettime(CLOCK_REALTIME,&start);
 
     for(int i=0;i<NUM_IMAGES;i++){
 
         conv_forward(input[i],L1,O1);
-        // #pragma acc update device(O1[0:L1->out_width*L1->out_height*L1->out_depth])
         relu_forward(O1,L2,O2);
-        // #pragma acc update self(O2[0:L2->out_width*L2->out_height*L2->out_depth])
-        // arr2txt(O2,L2->out_height,L2->out_depth,"O2.txt");
+        arr2txt(O2,L2->out_height,L2->out_depth,"O2-parallel.txt");
         pool_forward(O2,L3,O3);
         conv_forward(O3,L4,O4);
         relu_forward(O4,L5,O5);
+        arr2txt(O5,L5->out_height,L5->out_depth,"O5-parallel.txt");
         pool_forward(O5,L6,O6);
         conv_forward(O6,L7,O7);
         relu_forward(O7,L8,O8);
+        arr2txt(O8,L8->out_height,L8->out_depth,"O8-parallel.txt");
         pool_forward(O8,L9,O9);
         fc_forward(O9,L10,O10);
         softmax_forward(O10,L11,O11[i]);
-
         }
 
-    clock_gettime(CLOCK_REALTIME,&end);
     t2 = clock();
     ttotal+=t2-t1;
    
-    uint64_t diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
-    uint64_t seconds = diff/BILLION;
-    uint64_t nanoseconds = diff-seconds*BILLION;
-
     printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
-    printf("Elapsed time: %llu,%lld sec \n",(long long unsigned int)seconds,(long long unsigned int)nanoseconds);
-
+    
     // Results
     t1=clock();
     int predictions[NUM_IMAGES];
