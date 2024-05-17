@@ -157,6 +157,8 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S){
 // Performs the forward pass for a max pooling layer.
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
+    // #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
+
     // For each output feature map
     for(int m=0;m<l->out_depth;m++){
         int x_j=0; // Input height index, increased by stride
@@ -181,6 +183,8 @@ void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
             } // for i, x_i
         }   // for j, x_j
     }   // for m
+    // #pragma acc update self(Y[0:l->out_size])
+
 }
 
 // Frees memory allocated for a max pooling layer.
@@ -379,8 +383,12 @@ Softmax_Layer * make_softmax_layer(int W, int H, int D){
 // Performs the forward pass for a softmax layer.
 // X: Input data, l: Softmax layer, Y: Output data
 void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
+
+#pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
+
     // Compute max activation
     float max = X[0]; 
+#pragma acc parallel loop present(X,l) copy(max) reduction(max:max)
     for(int i = 1; i < l->out_depth; i++) {
         if (X[i] > max) {
             max = X[i];
@@ -389,6 +397,7 @@ void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
 
     // Compute exponentials and total
     float total = 0.0f;
+#pragma acc parallel loop present(X,l) copy(total) reduction(+:total)
     for(int i = 0; i < l->out_depth; i++) {
         float e = exp(X[i] - max);
         total += e;
@@ -396,10 +405,12 @@ void softmax_forward(float * restrict X, Softmax_Layer * l,float * restrict Y){
     }
 
     // Normalize and output to sum to one
+#pragma acc parallel loop present(X,l,Y) copyin(total)
     for(int i = 0; i < l->out_depth; i++) {
         Y[i] = l->likelihoods[i] / total;
 
     }
+#pragma acc update self(Y[0:l->out_size])
 
 }
 

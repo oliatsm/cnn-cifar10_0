@@ -204,6 +204,7 @@ int main(){
         pool_forward(O8,L9,O9);
         fc_forward(O9,L10,O10);
         softmax_forward(O10,L11,O11[i]);
+        arr2txt(O11[i],L11->out_height,L11->out_depth,"O11-parallel.txt");
         }
 
     t2 = clock();
