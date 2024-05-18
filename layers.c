@@ -157,8 +157,9 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S){
 // Performs the forward pass for a max pooling layer.
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
-    // #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
-
+    #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
+#pragma acc kernels present (X,l,Y)
+{
     // For each output feature map
     for(int m=0;m<l->out_depth;m++){
         int x_j=0; // Input height index, increased by stride
@@ -183,7 +184,8 @@ void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
             } // for i, x_i
         }   // for j, x_j
     }   // for m
-    // #pragma acc update self(Y[0:l->out_size])
+}
+    #pragma acc update self(Y[0:l->out_size])
 
 }
 

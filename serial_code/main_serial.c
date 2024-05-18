@@ -8,7 +8,7 @@
 #include "layers_serial.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 50000  // Number of Input Data
+#define NUM_IMAGES 1200  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -180,7 +180,7 @@ int main(){
         }
     t2 = clock();    
     ttotal+=t2-t1;
-   
+   arr2txt(O11[NUM_IMAGES-1],1,L11->out_size,"out11-1200-2.txt");
     printf("Net Forward total time:%f seconds\n",(double)(t2-t1)/CLOCKS_PER_SEC);
 
     // Results

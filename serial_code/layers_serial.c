@@ -46,10 +46,8 @@ void free_conv(Conv_Layer * l){
 void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
     // For each output feature map
     for(int m=0;m<l->out_depth;m++){        
-        int x_j=-l->padding; // Input height index, increased by stride
-        for(int j=0;j<l->out_height;j++, x_j+=l->stride){
-            int x_i=-l->padding; // Input width index, increased by stride
-            for(int i=0;i<l->out_width;i++,x_i+=l->stride){
+        for(int j=0;j<l->out_height;j++){
+            for(int i=0;i<l->out_width;i++){
                 int y_idx=i+(l->out_width*(j+m*l->out_height)); // Output index
                 // Calculate dot product of Weights*Input 
                 float sum = 0.0f;
@@ -57,9 +55,11 @@ void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
                     for(int f_j=0;f_j<l->filter_width;f_j++){
                         for(int f_i=0;f_i<l->filter_width;f_i++){
                             int f_idx=f_i+(f_j*l->filter_width)+(c+m*l->in_depth)*(l->filter_width*l->filter_width); // Filter Index
+                            int x_j = -l->padding + j*l->stride + f_j;// Input height index, increased by stride
+                            int x_i = -l->padding + i*l->stride + f_i;// Input width index, increased by stride
                             // If in range of image, else zero
-                            if((x_j+f_j)>=0&&(x_i+f_i)>=0 && (x_j+f_j)<l->in_height&&(x_i+f_i)<l->in_width){
-                                int x_idx= c*l->in_height*l->in_width+(x_j+f_j)*l->in_width+(x_i+f_i); // Input index
+                            if( x_j>=0 && x_i>=0 && x_j<l->in_height && x_i<l->in_width){
+                                int x_idx= c*l->in_height*l->in_width+x_j*l->in_width+x_i; // Input index
                                 sum+=l->weights[f_idx]*X[x_idx];
                             } // if
                         } // for f_i
@@ -67,8 +67,8 @@ void conv_forward(float* restrict X,Conv_Layer * l,float* restrict Y) {
                 } // for c
                 sum+=l->bias[m]; // Add bias
                 Y[y_idx]=sum; // Save output result
-            } // for i , x_i 
-        } // for j , x_j 
+            } // for i
+        } // for j 
     } //for m
 }
 
@@ -141,18 +141,18 @@ Pool_Layer * make_pool_layer(int W, int H, int D,int K, int S){
 void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
     // For each output feature map
     for(int m=0;m<l->out_depth;m++){
-        int x_j=0; // Input height index, increased by stride
-        for(int j=0;j<l->out_height;x_j+=l->stride,j++){
-            int x_i=0; // Input width index, increased by stride
-            for(int i =0; i<l->out_width;x_i+=l->stride,i++){
+        for(int j=0;j<l->out_height;j++){
+            for(int i =0; i<l->out_width;i++){
                 int y_idx = i+l->out_width*(j+m*l->out_height); // Output index
                 // Find Max in pooling filter
                 float max = -INFINITY;
-                for(int p_j=0;p_j<l->pool_width;p_j++){
-                    for(int p_i=0;p_i<l->pool_width;p_i++){
-                        int x_idx = (x_i+p_i) + ((x_j+p_j)+m*l->in_height)*l->in_width; //Input index
+                for(int p_j=0; p_j<l->pool_width; p_j++){
+                    for(int p_i=0; p_i<l->pool_width; p_i++){
+                        int x_j = j*l->stride + p_j; // Input height index, increased by stride
+                        int x_i = i*l->stride + p_i; // Input width index, increased by stride
+                        int x_idx = x_i + (x_j+m*l->in_height)*l->in_width; //Input index
                         //If in range of input
-                        if((x_i+p_i)>=0&&(x_j+p_j)>=0&&(x_i+p_i)<l->in_width&&(x_j+p_j)<l->in_height){
+                        if( x_i>=0 && x_j>=0 && x_i<l->in_width && x_j<l->in_height ){
                             if(X[x_idx]>max){
                                 max=X[x_idx];
                             } //if max
@@ -160,8 +160,8 @@ void pool_forward(float * restrict X, Pool_Layer * l,float * restrict Y){
                     }   // for p_i
                 }   // for p_j
                 Y[y_idx]=max;
-            } // for i, x_i
-        }   // for j, x_j
+            } // for i
+        }   // for j
     }   // for m
 }
 
