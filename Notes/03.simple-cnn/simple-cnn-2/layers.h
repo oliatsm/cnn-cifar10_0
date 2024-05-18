@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 // Input Data
-#define NUM_IMG 6 //Number of images
+#define NUM_IMG 1 //Number of images
 #define N_in 5//Input Width-Height
 #define C_in 3//Colour Chanels
 

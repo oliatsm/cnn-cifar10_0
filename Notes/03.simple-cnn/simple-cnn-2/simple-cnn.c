@@ -24,24 +24,24 @@ int load_data(int n,int m,float *data_array, char * file_name){
 
 int load_input(int n,int m,float **data_array, char * file_name){
     printf("Loading Data...\n");
-    // FILE * fp;
-    // fp=fopen(file_name,"r");
-    // if(fp==NULL){
-    //     printf("Error opening file!\n");
-    //     return 1;
-    // }
+    FILE * fp;
+    fp=fopen(file_name,"r");
+    if(fp==NULL){
+        printf("Error opening file!\n");
+        return 1;
+    }
 
     for(int img=0;img<NUM_IMG;img++){
-        // int number;        
+        int number;        
         for(int i=0;i<n*n*m;i++){
-            // fscanf(fp,"%d",&number);
-            // data_array[img][i]=number;
+            fscanf(fp,"%d",&number);
+            data_array[img][i]=number;
             // printf("%d ",number);
             // printf("(%d) %d\n",img,i);
-            data_array[img][i]=rand()%3;
+            // data_array[img][i]=rand()%3;
         }
     }
-// fclose(fp);
+fclose(fp);
 return 0;
 
 }
@@ -74,7 +74,7 @@ int main() {
         Input[i]=Input[i-1]+(C_in*N_in*N_in);
     }
 
-    load_input(N_in,C_in,Input,"../data/input.txt");
+    load_input(N_in,C_in,Input,"../data/input_2.txt");
     
 
     float * filters1=(float *)malloc(sizeof(float)*M1*C_in*K1*K1);
@@ -82,7 +82,7 @@ int main() {
         printf("Memory allocation failed for filters1\n");
         return 1;
     }
-    load_data(K1,M1*C_in,filters1,"../data/weights.txt");
+    load_data(K1,M1*C_in,filters1,"../data/weights_2.txt");
 
     float * bias1=(float *)malloc(sizeof(float)*M1);
     bias1[0]=1;
@@ -98,7 +98,7 @@ int main() {
     
 
 for(int i=0;i<NUM_IMG;i++){
-    printf("O1:\n");
+    printf("Input:\n");
     print_map(N_in,C_in,Input[i]);
     printf("\n");
 
