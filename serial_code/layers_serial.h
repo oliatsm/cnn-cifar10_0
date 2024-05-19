@@ -87,8 +87,8 @@ typedef struct conv_layer {
 
     int out_size;       // Output volume size
 
-    float *weights;     // Filter weights
-    float *bias;        // Bias values
+    float* weights;     // Filter weights
+    float* bias;        // Bias values
 
 }Conv_Layer;
 
@@ -134,8 +134,8 @@ typedef struct fc_layer {
 
     int out_size;       // Output volume size
 
-    float *weights;     // Weight matrix
-    float *bias;        // Bias values
+    float* weights;     // Weight matrix
+    float* bias;        // Bias values
 
 }FC_Layer;
 
@@ -150,32 +150,32 @@ typedef struct softmax_layer {
 
     int out_size;       // Output volume size
 
-    float *likelihoods; // Softmax probabilities
+    float* likelihoods; // Softmax probabilities
 
 }Softmax_Layer;
 
 // Functions to create layers
-Conv_Layer *make_conv_layer(int W, int H, int D, int K, int M, int S, int P);
-ReLU_Layer *make_relu_layer(int W, int H, int D);
-Pool_Layer *make_pool_layer(int W, int H, int D, int K, int S);
-FC_Layer   *make_fc_layer(int W, int H, int D, int num_neurons);
-Softmax_Layer *make_softmax_layer(int W, int H, int D);
+Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P);
+ReLU_Layer* make_relu_layer(int W, int H, int D);
+Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S);
+FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons);
+Softmax_Layer* make_softmax_layer(int W, int H, int D);
 
 // Functions to free memory allocated for layers
-void free_conv(Conv_Layer *l);
-void free_relu(ReLU_Layer *l);
-void free_pool(Pool_Layer *l);
-void free_fc(FC_Layer *l);
-void free_softmax(Softmax_Layer *l);
+void free_conv(Conv_Layer* l);
+void free_relu(ReLU_Layer* l);
+void free_pool(Pool_Layer* l);
+void free_fc(FC_Layer* l);
+void free_softmax(Softmax_Layer* l);
 
 // Functions for forward pass computation of layers
-void conv_forward(float *restrict X, Conv_Layer *l, float *restrict Y);
-void relu_forward(float *restrict X, ReLU_Layer *l, float *restrict Y);
-void pool_forward(float *restrict X, Pool_Layer *l, float *restrict Y);
-void fc_forward(float *restrict X, FC_Layer *l, float *restrict Y);
-void softmax_forward(float *restrict X, Softmax_Layer *l, float *restrict Y);
+void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y);
+void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y);
+void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y);
+void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y);
+void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y);
 
 // Functions to load pre-trained data for convolutional and fully connected layers
-int load_conv(Conv_Layer *l, char *file_name);
-int load_fc(FC_Layer *l, const char *filename);
+int load_conv(Conv_Layer* l, char* file_name);
+int load_fc(FC_Layer* l, const char* filename);
 #endif
