@@ -178,4 +178,5 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y);
 // Functions to load pre-trained data for convolutional and fully connected layers
 int load_conv(Conv_Layer* l, char* file_name);
 int load_fc(FC_Layer* l, const char* filename);
+
 #endif

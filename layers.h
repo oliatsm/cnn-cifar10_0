@@ -93,62 +93,62 @@ typedef struct conv_layer {
 }Conv_Layer;
 
 typedef struct relu_layer {
-    int in_width;
-    int in_height;
-    int in_depth;
+    int in_width;       // Input width
+    int in_height;      // Input height
+    int in_depth;       // Input depth
 
-    int out_width;
-    int out_height;
-    int out_depth;
+    int out_width;      // Output width
+    int out_height;     // Output height
+    int out_depth;      // Output depth
 
-    int out_size;
+    int out_size;       // Output volume size
 
-}ReLU_Layer;
+} ReLU_Layer;
 
 typedef struct pool_layer {
-    int in_width;
-    int in_height;
-    int in_depth;
+    int in_width;       // Input width
+    int in_height;      // Input height
+    int in_depth;       // Input depth
 
     int pool_width;     // Pooling width
     int stride;         // Stride
 
-    int out_width;
-    int out_height;
-    int out_depth;
+    int out_width;      // Output width
+    int out_height;     // Output height
+    int out_depth;      // Output depth
 
-    int out_size;
+    int out_size;       // Output volume size
 
-}Pool_Layer;
+} Pool_Layer;
 
 typedef struct fc_layer {
-    int in_width;
-    int in_height;
-    int in_depth;
+    int in_width;       // Input width
+    int in_height;      // Input height
+    int in_depth;       // Input depth
 
     int in_neurons;     // Number of input neurons
 
-    int out_width;
-    int out_height;
-    int out_depth;
+    int out_width;      // Output width
+    int out_height;     // Output height
+    int out_depth;      // Output depth
 
-    int out_size;
+    int out_size;       // Output volume size
 
     float* weights;     // Weight matrix
-    float* bias;
+    float* bias;        // Bias values
 
 }FC_Layer;
 
 typedef struct softmax_layer {
-    int in_width;
-    int in_height;
-    int in_depth;
+    int in_width;       // Input width
+    int in_height;      // Input height
+    int in_depth;       // Input depth
 
-    int out_width;
-    int out_height;
-    int out_depth;
+    int out_width;      // Output width
+    int out_height;     // Output height
+    int out_depth;      // Output depth
 
-    int out_size;
+    int out_size;       // Output volume size
 
     float* likelihoods; // Softmax probabilities
 
