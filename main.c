@@ -193,23 +193,23 @@ int main() {
         conv_forward(input[i], L1, O1);
         relu_forward(O1, L2, O2);
         pool_forward(O2, L3, O3);
-        arr2txt(O3, L3->out_height, L3->out_depth, "O3-parallel.txt");
         conv_forward(O3, L4, O4);
         relu_forward(O4, L5, O5);
         pool_forward(O5, L6, O6);
-        arr2txt(O6, L6->out_height, L6->out_depth, "O6-parallel.txt");
         conv_forward(O6, L7, O7);
         relu_forward(O7, L8, O8);
         pool_forward(O8, L9, O9);
-        arr2txt(O9, L9->out_height, L9->out_depth, "O9-parallel.txt");
         fc_forward(O9, L10, O10);
         softmax_forward(O10, L11, O11[i]);
     }
+    #pragma acc update self(O10[0:L10->out_size])
+        arr2txt(O10, L10->out_height, L10->out_depth, "O10-parallel.txt");
 
     t2 = clock();
     ttotal += t2 - t1;
 
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+    #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
 
     // Results
     t1 = clock();

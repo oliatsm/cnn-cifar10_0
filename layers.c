@@ -53,13 +53,19 @@ void free_conv(Conv_Layer* l) {
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
+// #pragma acc update self(X[0:l->in_width*l->in_height*l->in_depth])
     // For each output feature map
+#pragma acc kernels present(X,l,Y)
+{
+    #pragma acc loop independent
     for (int m = 0; m < l->out_depth; m++) {
+    #pragma acc loop collapse(2) independent
         for (int j = 0; j < l->out_height; j++) {
             for (int i = 0; i < l->out_width; i++) {
                 int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
                 // Calculate dot product of Weights*Input 
                 float sum = l->bias[m]; // Add bias
+            #pragma acc loop collapse(3) reduction(+:sum)
                 for (int c = 0; c < l->in_depth; c++) {
                     for (int f_j = 0; f_j < l->filter_width; f_j++) {
                         for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -78,6 +84,9 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
             } // for i
         } // for j
     } // for m
+}
+// #pragma acc update device(Y[0:l->out_size])
+
 }
 
 // Creates a ReLU activation layer.
@@ -108,12 +117,12 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
 
-#pragma acc update device(X[0:l->out_size])
+// #pragma acc update device(X[0:l->out_size])
 #pragma acc parallel loop present(X,l,Y)
     for (int i = 0; i < l->out_size; i++) {
         Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
     }
-#pragma acc update self(Y[0:l->out_size])
+// #pragma acc update self(Y[0:l->out_size])
 
 }
 
@@ -156,16 +165,19 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 // Performs the forward pass for a max pooling layer.
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
-#pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
-    // #pragma acc kernels present (X,l,Y)
-        // {
+// #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
+#pragma acc kernels present(X,l,Y)
+{
             // For each output feature map
+#pragma acc loop independent
     for (int m = 0; m < l->out_depth; m++) {
+    #pragma acc loop collapse(2) independent
         for (int j = 0; j < l->out_height; j++) {
             for (int i = 0; i < l->out_width; i++) {
-                int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
                 // Find Max in pooling filter
                 float max = -INFINITY;
+            // #pragma acc parallel loop collapse(2) present(l,X) reduction(max:max)
+            #pragma acc loop collapse(2) seq
                 for (int p_j = 0; p_j < l->pool_width; p_j++) {
                     for (int p_i = 0; p_i < l->pool_width; p_i++) {
                         int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
@@ -179,10 +191,13 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
                         } // if in range
                     } // for p_i
                 } // for p_j
+                int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
                 Y[y_idx] = max;
             } // for i
         } // for j
     } // for m
+}
+// #pragma acc update self(Y[0:l->out_size])
 }
 
 // Frees memory allocated for a max pooling layer.
@@ -226,7 +241,10 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // Performs the forward pass for a fully connected layer.
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
+// #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
     // For every output neuron
+#pragma acc kernels present(l,X,Y)
+{ 
     for (int i = 0; i < l->out_depth; i++) {
         // Calculate dot product of input and weights
         float sum = l->bias[i]; // add bias
@@ -236,6 +254,8 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
         }
         Y[i] = sum;
     }
+}
+// #pragma acc update self(Y[0:l->out_size])
 }
 
 // Frees memory allocated for a fully connected layer.
@@ -381,7 +401,7 @@ Softmax_Layer* make_softmax_layer(int W, int H, int D) {
 // X: Input data, l: Softmax layer, Y: Output data
 void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 
-#pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
+// #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
 
     // Compute max activation
     float max = X[0];
