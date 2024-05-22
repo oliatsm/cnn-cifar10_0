@@ -238,14 +238,12 @@ int main() {
         time_softmax += (double)(clock() - t2) / CLOCKS_PER_SEC;
     }
 
-    #pragma acc update self(O10[0:L10->out_size])
-        arr2txt(O10, L10->out_height, L10->out_depth, "O10-parallel.txt");
-
     t2 = clock();
     ttotal += t2 - t1;
 
+    printf("\n");
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
-    #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
+    // #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     
     printf("    Time for conv1: %f seconds\n", time_conv1);
     printf("    Time for relu1: %f seconds\n", time_relu1);
@@ -260,12 +258,12 @@ int main() {
     printf("    Time for softmax: %f seconds\n", time_softmax);
 
     printf("\n");
-    printf("  Conv:%f seconds\n",time_conv1+time_conv2+time_conv3);
-    printf("  ReLU:%f seconds\n",time_relu1+time_relu2+time_relu3);
-    printf("  Pool:%f seconds\n",time_pool1+time_pool2+time_pool3);
+    printf("  Conv: %f seconds\n",time_conv1+time_conv2+time_conv3);
+    printf("  ReLU: %f seconds\n",time_relu1+time_relu2+time_relu3);
+    printf("  Pool: %f seconds\n",time_pool1+time_pool2+time_pool3);
+    printf("  FC:   %f seconds\n", time_fc);
+    printf("  Softmax: %f seconds\n", time_softmax);
     printf("\n");
-
-
 
     // Results
     t1 = clock();

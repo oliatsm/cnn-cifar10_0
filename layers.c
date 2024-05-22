@@ -53,7 +53,7 @@ void free_conv(Conv_Layer* l) {
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
-#pragma acc update self(X[0:l->in_width*l->in_height*l->in_depth])
+// #pragma acc update self(X[0:l->in_width*l->in_height*l->in_depth])
     // For each output feature map
 // #pragma acc kernels present (l,X,Y)
 // {
@@ -86,7 +86,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
         } // for j
     } // for m
 // } //acc kernels
-#pragma acc update device(Y[0:l->out_size])
+// #pragma acc update device(Y[0:l->out_size])
 
 }
 
@@ -119,7 +119,7 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
 
 // #pragma acc update device(X[0:l->out_size])
-#pragma acc parallel loop present(X,l,Y)
+// #pragma acc parallel loop present(X,l,Y)
     for (int i = 0; i < l->out_size; i++) {
         Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
     }
@@ -167,18 +167,17 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
 // #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
-#pragma acc kernels present(X,l,Y)
-{
+// #pragma acc kernels present(X,l,Y)
+// {
             // For each output feature map
-#pragma acc loop independent
+// #pragma acc loop independent
     for (int m = 0; m < l->out_depth; m++) {
-    #pragma acc loop collapse(2) independent
+    // #pragma acc loop collapse(2) independent
         for (int j = 0; j < l->out_height; j++) {
             for (int i = 0; i < l->out_width; i++) {
                 // Find Max in pooling filter
                 float max = -INFINITY;
-            // #pragma acc parallel loop collapse(2) present(l,X) reduction(max:max)
-            #pragma acc loop collapse(2) seq
+            // #pragma acc loop collapse(2) seq
                 for (int p_j = 0; p_j < l->pool_width; p_j++) {
                     for (int p_i = 0; p_i < l->pool_width; p_i++) {
                         int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
@@ -197,7 +196,7 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
             } // for i
         } // for j
     } // for m
-}
+// } // acc kernels
 // #pragma acc update self(Y[0:l->out_size])
 }
 
@@ -244,8 +243,8 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
 // #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
     // For every output neuron
-#pragma acc kernels present(l,X,Y)
-{ 
+// #pragma acc kernels present(l,X,Y)
+// { 
     for (int i = 0; i < l->out_depth; i++) {
         // Calculate dot product of input and weights
         float sum = l->bias[i]; // add bias
@@ -255,7 +254,7 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
         }
         Y[i] = sum;
     }
-}
+// } // acc kernels
 // #pragma acc update self(Y[0:l->out_size])
 }
 
@@ -406,7 +405,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 
     // Compute max activation
     float max = X[0];
-#pragma acc parallel loop present(X,l) copy(max) reduction(max:max)
+// #pragma acc parallel loop present(X,l) copy(max) reduction(max:max)
     for (int i = 1; i < l->out_depth; i++) {
         if (X[i] > max) {
             max = X[i];
@@ -415,7 +414,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 
     // Compute exponentials and total
     float total = 0.0f;
-#pragma acc parallel loop present(X,l) copy(total) reduction(+:total)
+// #pragma acc parallel loop present(X,l) copy(total) reduction(+:total)
     for (int i = 0; i < l->out_depth; i++) {
         float e = exp(X[i] - max);
         total += e;
@@ -423,7 +422,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
     }
 
     // Normalize and output to sum to one
-#pragma acc parallel loop present(X,l,Y) copyin(total)
+// #pragma acc parallel loop present(X,l,Y) copyin(total)
     for (int i = 0; i < l->out_depth; i++) {
         Y[i] = l->likelihoods[i] / total;
 
