@@ -53,19 +53,19 @@ void free_conv(Conv_Layer* l) {
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
-// #pragma acc update self(X[0:l->in_width*l->in_height*l->in_depth])
+#pragma acc update self(X[0:l->in_width*l->in_height*l->in_depth])
     // For each output feature map
-#pragma acc kernels present(X,l,Y)
-{
-    #pragma acc loop independent
+// #pragma acc kernels present (l,X,Y)
+// {
+    // #pragma acc loop independent gang
     for (int m = 0; m < l->out_depth; m++) {
-    #pragma acc loop collapse(2) independent
+    #pragma acc loop collapse(2) independent worker
         for (int j = 0; j < l->out_height; j++) {
             for (int i = 0; i < l->out_width; i++) {
                 int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
                 // Calculate dot product of Weights*Input 
-                float sum = l->bias[m]; // Add bias
-            #pragma acc loop collapse(3) reduction(+:sum)
+                float sum = 0.0;//l->bias[m]; // Add bias
+            // #pragma acc loop collapse(3) independent
                 for (int c = 0; c < l->in_depth; c++) {
                     for (int f_j = 0; f_j < l->filter_width; f_j++) {
                         for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -80,12 +80,13 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
                         } // for f_i
                     } // for f_j
                 } // for c
+                sum += l->bias[m]; // Add bias
                 Y[y_idx] = sum; // Save output result
             } // for i
         } // for j
     } // for m
-}
-// #pragma acc update device(Y[0:l->out_size])
+// } //acc kernels
+#pragma acc update device(Y[0:l->out_size])
 
 }
 
@@ -427,7 +428,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
         Y[i] = l->likelihoods[i] / total;
 
     }
-#pragma acc update self(Y[0:l->out_size])
+// #pragma acc update self(Y[0:l->out_size])
 
 }
 

@@ -7,8 +7,6 @@
 
 #include <openacc.h>
 
-#define BILLION 1000000000L
-
 
 #include "layers.h"
 #include "malloc2D.h"
@@ -104,6 +102,11 @@ void arr2txt(float* arr, int N, int M, char* file_name);
 int main() {
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
     clock_t t1, t2, ttotal;
+    double time_conv1 = 0, time_relu1 = 0, time_pool1 = 0;
+    double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
+    double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
+    double time_fc = 0, time_softmax = 0;
+
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels (only on host)
@@ -190,18 +193,51 @@ int main() {
 
     for (int i = 0; i < NUM_IMAGES; i++) {
 
+        t2 = clock();
         conv_forward(input[i], L1, O1);
+        time_conv1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         relu_forward(O1, L2, O2);
+        time_relu1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         pool_forward(O2, L3, O3);
+        time_pool1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         conv_forward(O3, L4, O4);
+        time_conv2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         relu_forward(O4, L5, O5);
+        time_relu2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         pool_forward(O5, L6, O6);
+        time_pool2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         conv_forward(O6, L7, O7);
+        time_conv3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         relu_forward(O7, L8, O8);
+        time_relu3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         pool_forward(O8, L9, O9);
+        time_pool3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         fc_forward(O9, L10, O10);
+        time_fc += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        t2 = clock();
         softmax_forward(O10, L11, O11[i]);
+        time_softmax += (double)(clock() - t2) / CLOCKS_PER_SEC;
     }
+
     #pragma acc update self(O10[0:L10->out_size])
         arr2txt(O10, L10->out_height, L10->out_depth, "O10-parallel.txt");
 
@@ -210,6 +246,26 @@ int main() {
 
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
     #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
+    
+    printf("    Time for conv1: %f seconds\n", time_conv1);
+    printf("    Time for relu1: %f seconds\n", time_relu1);
+    printf("    Time for pool1: %f seconds\n", time_pool1);
+    printf("    Time for conv2: %f seconds\n", time_conv2);
+    printf("    Time for relu2: %f seconds\n", time_relu2);
+    printf("    Time for pool2: %f seconds\n", time_pool2);
+    printf("    Time for conv3: %f seconds\n", time_conv3);
+    printf("    Time for relu3: %f seconds\n", time_relu3);
+    printf("    Time for pool3: %f seconds\n", time_pool3);
+    printf("    Time for fc: %f seconds\n", time_fc);
+    printf("    Time for softmax: %f seconds\n", time_softmax);
+
+    printf("\n");
+    printf("  Conv:%f seconds\n",time_conv1+time_conv2+time_conv3);
+    printf("  ReLU:%f seconds\n",time_relu1+time_relu2+time_relu3);
+    printf("  Pool:%f seconds\n",time_pool1+time_pool2+time_pool3);
+    printf("\n");
+
+
 
     // Results
     t1 = clock();
