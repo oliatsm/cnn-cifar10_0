@@ -1,9 +1,9 @@
 # Makefile for cnn-cifar10 project
 
 CC = nvc
-CFLAGS = -acc=gpu -Minfo=acc -c11 -Wall -Wextra -march=native -g -pg
+CFLAGS = -acc=gpu -Minfo=all  -c11 -Wall -Wextra -march=native #-g  -gpu=lineinfo -pg 
 
-SRC = main.c layers.c malloc2D.c 
+SRC = main.c layers.c malloc2D.c timer.c
 EXECUTABLE = cnn-cifar10
 
 all: $(EXECUTABLE)

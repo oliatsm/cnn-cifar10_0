@@ -177,10 +177,10 @@ softmax_forward:
 
 ```
 Conv: 52.376681 seconds
-  ReLU: 0.116132 seconds
-  Pool: 0.316277 seconds
-  FC:   0.003999 seconds
-  Softmax: 0.088111 seconds
+ReLU: 0.116132 seconds
+Pool: 0.316277 seconds
+FC:   0.003999 seconds
+Softmax: 0.088111 seconds
 ```
 
 # Parallel Fully Connected
@@ -215,10 +215,10 @@ fc_forward:
 ```
 Net Forward total time:50.828765 seconds (Serial 50.625525 seconds)
 Conv: 50.316362 seconds
-  ReLU: 0.088280 seconds
-  Pool: 0.240098 seconds
-  FC:   0.056027 seconds
-  Softmax: 0.107998 seconds
+ReLU: 0.088280 seconds
+Pool: 0.240098 seconds
+FC:   0.056027 seconds
+Softmax: 0.107998 seconds
 ```
 ### FC Kernels
 ```c
@@ -250,10 +250,10 @@ fc_forward:
 ```
 Net Forward total time:50.959538 seconds
 Conv: 50.374998 seconds
-  ReLU: 0.112185 seconds
-  Pool: 0.268259 seconds
-  FC:   0.040045 seconds
-  Softmax: 0.140053 seconds
+ReLU: 0.112185 seconds
+Pool: 0.268259 seconds
+FC:   0.040045 seconds
+Softmax: 0.140053 seconds
 ```
 
 # Parallel Pool
@@ -342,8 +342,102 @@ relu_forward:
 ```
 Net Forward total time:51.688771 seconds
 Conv: 51.191686 seconds
-  ReLU: 0.084158 seconds
-  Pool: 0.112071 seconds
-  FC:   0.044124 seconds
-  Softmax: 0.132122 seconds
+ReLU: 0.084158 seconds
+Pool: 0.112071 seconds
+FC:   0.044124 seconds
+Softmax: 0.132122 seconds
 ```
+
+# Time for all image dataset
+
+Parallel all layers except convolutional
+
+```
+olia@krylov100:~/Diplomatiki/cnn-cifar10_0$ ./cnn-cifar10 
+CNN for 50000 images
+Loading input batch 1...
+Loading input batch 2...
+Loading input batch 3...
+Loading input batch 4...
+Loading input batch 5...
+Load Data time:0.683571 seconds
+Load Data to device time:0.281417 seconds
+Create Network time:0.039620 seconds
+Load Network Parameters time:0.008463 seconds
+Create Ouputs time:0.015042 seconds
+
+Net Forward total time:376.260260 seconds
+    Time for conv1: 120.963449 seconds
+    Time for relu1: 0.680667 seconds
+    Time for pool1: 0.662796 seconds
+    Time for conv2: 188.925111 seconds
+    Time for relu2: 0.668978 seconds
+    Time for pool2: 0.605115 seconds
+    Time for conv3: 55.106175 seconds
+    Time for relu3: 0.663722 seconds
+    Time for pool3: 0.598970 seconds
+    Time for fc: 0.645718 seconds
+    Time for softmax: 2.492726 seconds
+
+  Conv: 364.994735 seconds
+  ReLU: 2.013367 seconds
+  Pool: 1.866881 seconds
+  FC:   0.645718 seconds
+  Softmax: 2.492726 seconds
+
+Net Accuracy: 78.84 % 
+Net Accuracy time:0.000790 seconds
+Free memory time:0.041621 seconds
+Total time:375.963642 seconds
+END!
+```
+
+# Serial Execution for 50.000 images
+
+```
+olia@krylov100:~/Diplomatiki/cnn-cifar10_0/serial_code$ ./cnn-cifar10 
+Serial Code
+CNN for 50000 images
+Loading input batch 1...
+Loading input batch 2...
+Loading input batch 3...
+Loading input batch 4...
+Loading input batch 5...
+Load Data time:0.916583 seconds
+Create Network time:0.000011 seconds
+Load Network Parameters time:0.008689 seconds
+Create Ouputs time:0.000453 seconds
+
+Net Forward total time:1440.203875 seconds
+    Time for conv1: 462.387537 seconds
+    Time for relu1: 4.124741 seconds
+    Time for pool1: 7.408484 seconds
+    Time for conv2: 743.993717 seconds
+    Time for relu2: 1.196957 seconds
+    Time for pool2: 2.267751 seconds
+    Time for conv3: 216.692938 seconds
+    Time for relu3: 0.345922 seconds
+    Time for pool3: 0.636112 seconds
+    Time for fc: 0.542407 seconds
+    Time for softmax: 0.061857 seconds
+
+  Conv: 1423.074192 seconds
+  ReLU: 5.667620 seconds
+  Pool: 10.312347 seconds
+  FC:   0.542407 seconds
+  Softmax: 0.061857 seconds
+
+Net Accuracy: 78.84 % 
+Net Accuracy time:0.003177 seconds
+Free memory time:0.055915 seconds
+Total time:1441.188703 seconds
+END!
+```
+
+| Serial | Parallel |
+|---     |---       |
+|Conv: 1423.074192 seconds|  Conv: 364.994735 seconds   |
+|ReLU: 5.667620 seconds   |  ReLU: 2.013367 seconds     |
+|Pool: 10.312347 seconds  |  Pool: 1.866881 seconds     |
+|FC:   0.542407 seconds   |  FC:   0.645718 seconds     |
+|Softmax: 0.061857 seconds|  Softmax: 2.492726 seconds  |

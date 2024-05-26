@@ -10,6 +10,7 @@
 
 #include "layers.h"
 #include "malloc2D.h"
+#include "timer.h"
 // #include "tests.h"
 
 #define NUM_IMAGES 1200  // Number of Input Data
@@ -101,7 +102,8 @@ void arr2txt(float* arr, int N, int M, char* file_name);
 
 int main() {
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    clock_t t1, t2, ttotal;
+    clock_t t1, t2, ttotal; //t3,t4,
+    // struct timespec t3;
     double time_conv1 = 0, time_relu1 = 0, time_pool1 = 0;
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
@@ -197,6 +199,8 @@ int main() {
         conv_forward(input[i], L1, O1);
         time_conv1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
+        #pragma acc update device(O1[0:L1->out_size])
+
         t2 = clock();
         relu_forward(O1, L2, O2);
         time_relu1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
@@ -205,9 +209,13 @@ int main() {
         pool_forward(O2, L3, O3);
         time_pool1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
+        #pragma acc update self(O3[0:L3->out_size])
+
         t2 = clock();
         conv_forward(O3, L4, O4);
         time_conv2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+
+        #pragma acc update device(O4[0:L4->out_size])
 
         t2 = clock();
         relu_forward(O4, L5, O5);
@@ -216,15 +224,19 @@ int main() {
         t2 = clock();
         pool_forward(O5, L6, O6);
         time_pool2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        
+        #pragma acc update self(O6[0:L6->out_size])
 
         t2 = clock();
         conv_forward(O6, L7, O7);
         time_conv3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
+        #pragma acc update device(O7[0:L7->out_size])
+
         t2 = clock();
         relu_forward(O7, L8, O8);
         time_relu3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
-
+    
         t2 = clock();
         pool_forward(O8, L9, O9);
         time_pool3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
@@ -232,7 +244,7 @@ int main() {
         t2 = clock();
         fc_forward(O9, L10, O10);
         time_fc += (double)(clock() - t2) / CLOCKS_PER_SEC;
-
+        
         t2 = clock();
         softmax_forward(O10, L11, O11[i]);
         time_softmax += (double)(clock() - t2) / CLOCKS_PER_SEC;
@@ -240,10 +252,10 @@ int main() {
 
     t2 = clock();
     ttotal += t2 - t1;
+    #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
 
     printf("\n");
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
-    // #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     
     printf("    Time for conv1: %f seconds\n", time_conv1);
     printf("    Time for relu1: %f seconds\n", time_relu1);
