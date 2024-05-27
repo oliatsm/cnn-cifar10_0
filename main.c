@@ -99,6 +99,7 @@ int load_data(float** image, int* label, int N) {
 
 // Test Function
 void arr2txt(float* arr, int N, int M, char* file_name);
+void arr2txt_2(float** arr, int N, int M, char* file_name);
 
 int main() {
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
@@ -256,7 +257,7 @@ int main() {
 
     // arr2txt(input[NUM_IMAGES-1],L1->in_height,L1->in_depth,"L1-input.txt");
     // arr2txt(L1->padded_input,L1->padded_height,L1->in_depth,"L1-padded-input.txt");
-        
+    // arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
 
     printf("\n");
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
@@ -381,6 +382,28 @@ void arr2txt(float* arr, int N, int M, char* file_name) {
             fprintf(file, "\n");
         }
     }
+
+    fclose(file);
+}
+
+void arr2txt_2(float** arr, int N, int M, char* file_name) {
+    FILE* file = fopen(file_name, "w");
+
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+    fprintf(file, "%d,%d,%d\n", N, N, M);
+    for (int n = 0; n < NUM_IMAGES; n++){
+    for (int k = 0; k < M; ++k) {
+        for (int j = 0; j < N; ++j) {
+            for (int i = 0; i < N; ++i) {
+                int idx = ((j * N) + i) + (N * N) * k;
+                fprintf(file, "%f ", arr[n][idx]);
+            }
+            fprintf(file, "\n");
+        }
+    }}
 
     fclose(file);
 }

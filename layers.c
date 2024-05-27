@@ -41,7 +41,6 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 #pragma acc enter data create(layer->bias[0:M])
 #pragma acc enter data create(layer->padded_input[0:layer->padded_size])
 
-
     return layer;
 }
 
@@ -201,11 +200,11 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
                             int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
                             int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
                             // If in range of input
-                            if (x_i >= 0 && x_j >= 0 && x_i < l->in_width && x_j < l->in_height) {
+                            // if (x_i >= 0 && x_j >= 0 && x_i < l->in_width && x_j < l->in_height) {
                                 if (X[x_idx] > max) {
                                     max = X[x_idx];
                                 } // if max
-                            } // if in range
+                            // } // if in range
                         } // for p_i
                     } // for p_j
                     int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
