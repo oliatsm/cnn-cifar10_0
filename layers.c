@@ -95,11 +95,6 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
                             int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
                             int x_j = j * l->stride + f_j;                                                             // Input height index, increased by stride
                             int x_i = i * l->stride + f_i;                                                             // Input width index, increased by stride
-                            // // If in range of image, else zero
-                            // if (x_j >= 0 && x_i >= 0 && x_j < l->in_height && x_i < l->in_width) {
-                            //     int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i; // Input index
-                            //     sum += l->weights[f_idx] * X[x_idx];
-                            // } // if
                             int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
                                 sum += l->weights[f_idx] * l->padded_input[x_idx];
                         } // for f_i
