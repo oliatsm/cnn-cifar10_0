@@ -29,10 +29,18 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
     layer->weights = malloc(sizeof(float) * K * K * M * D);
     layer->bias = malloc(sizeof(float) * M);
 
+    layer->padded_width = W + 2 * P;
+    layer->padded_height = H + 2 * P;
+    layer->padded_size = layer->padded_width * layer->padded_height * layer->in_depth;
+
+    layer->padded_input = (float*)calloc(layer->padded_size, sizeof(float));
+
     // Move convolutional layer data to device memory
 #pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->weights[0:K*K*M*D])
 #pragma acc enter data create(layer->bias[0:M])
+#pragma acc enter data create(layer->padded_input[0:layer->padded_size])
+
 
     return layer;
 }
@@ -41,41 +49,59 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 // l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer* l) {
     // Free memory from device
+#pragma acc exit data delete(l->padded_input[0:l->padded_size])
 #pragma acc exit data delete(l->bias[0:l->out_depth])
 #pragma acc exit data delete(l->weights[0:(l->in_depth*l->filter_width*l->filter_width*l->num_filters)])
 #pragma acc exit data delete(l[0:1])
 
+    free(l->padded_input);
     free(l->bias);
     free(l->weights);
     free(l);
 }
 
+void add_padding(float* restrict X, Conv_Layer* l) {
+
+    for (int d = 0; d < l->in_depth; d++) {
+        for (int j = 0; j < l->in_height; j++) {
+            for (int i = 0; i < l->in_width; i++) {
+                int padded_idx = (d * l->padded_height + (j + l->padding)) * l->padded_width + (i + l->padding);
+                int input_idx = (d * l->in_height + j) * l->in_width + i;
+                l->padded_input[padded_idx] = X[input_idx];
+            }
+        }
+    }
+}
+
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
+    add_padding(X, l);
     // For each output feature map
 // #pragma acc kernels present (l,X,Y)
 // {
     // #pragma acc loop independent gang
     for (int m = 0; m < l->out_depth; m++) {
-    // #pragma acc loop collapse(2) independent worker
+        // #pragma acc loop collapse(2) independent worker
         for (int j = 0; j < l->out_height; j++) {
             for (int i = 0; i < l->out_width; i++) {
                 int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
                 // Calculate dot product of Weights*Input 
                 float sum = 0.0;//l->bias[m]; // Add bias
-            // #pragma acc loop collapse(3) independent
+                // #pragma acc loop collapse(3) independent
                 for (int c = 0; c < l->in_depth; c++) {
                     for (int f_j = 0; f_j < l->filter_width; f_j++) {
                         for (int f_i = 0; f_i < l->filter_width; f_i++) {
                             int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-                            int x_j = -l->padding + j * l->stride + f_j;                                                             // Input height index, increased by stride
-                            int x_i = -l->padding + i * l->stride + f_i;                                                             // Input width index, increased by stride
-                            // If in range of image, else zero
-                            if (x_j >= 0 && x_i >= 0 && x_j < l->in_height && x_i < l->in_width) {
-                                int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i; // Input index
-                                sum += l->weights[f_idx] * X[x_idx];
-                            } // if
+                            int x_j = j * l->stride + f_j;                                                             // Input height index, increased by stride
+                            int x_i = i * l->stride + f_i;                                                             // Input width index, increased by stride
+                            // // If in range of image, else zero
+                            // if (x_j >= 0 && x_i >= 0 && x_j < l->in_height && x_i < l->in_width) {
+                            //     int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i; // Input index
+                            //     sum += l->weights[f_idx] * X[x_idx];
+                            // } // if
+                            int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
+                                sum += l->weights[f_idx] * l->padded_input[x_idx];
                         } // for f_i
                     } // for f_j
                 } // for c
@@ -164,35 +190,35 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
 
 #pragma acc kernels present(X,l,Y)
-{
-            // For each output feature map
+    {
+        // For each output feature map
 #pragma acc loop independent
-    for (int m = 0; m < l->out_depth; m++) {
-    #pragma acc loop collapse(2) independent
-        for (int j = 0; j < l->out_height; j++) {
-            for (int i = 0; i < l->out_width; i++) {
-                // Find Max in pooling filter
-                float max = -INFINITY;
-            #pragma acc loop collapse(2) seq
-                for (int p_j = 0; p_j < l->pool_width; p_j++) {
-                    for (int p_i = 0; p_i < l->pool_width; p_i++) {
-                        int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
-                        int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
-                        int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
-                        // If in range of input
-                        if (x_i >= 0 && x_j >= 0 && x_i < l->in_width && x_j < l->in_height) {
-                            if (X[x_idx] > max) {
-                                max = X[x_idx];
-                            } // if max
-                        } // if in range
-                    } // for p_i
-                } // for p_j
-                int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
-                Y[y_idx] = max;
-            } // for i
-        } // for j
-    } // for m
-} // acc kernels
+        for (int m = 0; m < l->out_depth; m++) {
+#pragma acc loop collapse(2) independent
+            for (int j = 0; j < l->out_height; j++) {
+                for (int i = 0; i < l->out_width; i++) {
+                    // Find Max in pooling filter
+                    float max = -INFINITY;
+#pragma acc loop collapse(2) seq
+                    for (int p_j = 0; p_j < l->pool_width; p_j++) {
+                        for (int p_i = 0; p_i < l->pool_width; p_i++) {
+                            int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
+                            int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
+                            int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
+                            // If in range of input
+                            if (x_i >= 0 && x_j >= 0 && x_i < l->in_width && x_j < l->in_height) {
+                                if (X[x_idx] > max) {
+                                    max = X[x_idx];
+                                } // if max
+                            } // if in range
+                        } // for p_i
+                    } // for p_j
+                    int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
+                    Y[y_idx] = max;
+                } // for i
+            } // for j
+        } // for m
+    } // acc kernels
 
 }
 
@@ -237,24 +263,24 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // Performs the forward pass for a fully connected layer.
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
-// #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
-    // For every output neuron
+    // #pragma acc update device(X[0:l->in_width*l->in_height*l->in_depth])
+        // For every output neuron
 #pragma acc kernels present(l,X,Y)
-{ 
-    // #pragma acc parallel loop present(X,l,Y) gang
-    for (int i = 0; i < l->out_depth; i++) {
-        // Calculate dot product of input and weights
-        float sum = 0.0; // add bias
-        // #pragma acc parallel loop reduction(+:sum)
-        for (int j = 0; j < l->in_neurons; j++) {
-            int w_idx = j + i * l->in_neurons; // Weight index
-            sum += X[j] * l->weights[w_idx];
+    {
+        // #pragma acc parallel loop present(X,l,Y) gang
+        for (int i = 0; i < l->out_depth; i++) {
+            // Calculate dot product of input and weights
+            float sum = 0.0; // add bias
+            // #pragma acc parallel loop reduction(+:sum)
+            for (int j = 0; j < l->in_neurons; j++) {
+                int w_idx = j + i * l->in_neurons; // Weight index
+                sum += X[j] * l->weights[w_idx];
+            }
+            sum += l->bias[i];
+            Y[i] = sum;
         }
-        sum += l->bias[i];
-        Y[i] = sum;
-    }
-} // acc kernels
-// #pragma acc update self(Y[0:l->out_size])
+    } // acc kernels
+    // #pragma acc update self(Y[0:l->out_size])
 }
 
 // Frees memory allocated for a fully connected layer.
@@ -403,33 +429,33 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
     float max = X[0];
     float total = 0.0f;
 #pragma acc data copyin(max,total) present(l,X,Y)
-{
-    // #pragma acc kernels
-    // {
-    // Compute max activation
+    {
+        // #pragma acc kernels
+        // {
+        // Compute max activation
 #pragma acc parallel loop reduction(max:max)
-    for (int i = 1; i < l->out_depth; i++) {
-        if (X[i] > max) {
-            max = X[i];
+        for (int i = 1; i < l->out_depth; i++) {
+            if (X[i] > max) {
+                max = X[i];
+            }
         }
-    }
 
-    // Compute exponentials and total
+        // Compute exponentials and total
 #pragma acc parallel loop reduction(+:total)  
-    for (int i = 0; i < l->out_depth; i++) {
-        float e = exp(X[i] - max);
-        total += e;
-        l->likelihoods[i] = e;
-    }
+        for (int i = 0; i < l->out_depth; i++) {
+            float e = exp(X[i] - max);
+            total += e;
+            l->likelihoods[i] = e;
+        }
 
-    // Normalize and output to sum to one
+        // Normalize and output to sum to one
 #pragma acc parallel loop
-    for (int i = 0; i < l->out_depth; i++) {
-        Y[i] = l->likelihoods[i] / total;
+        for (int i = 0; i < l->out_depth; i++) {
+            Y[i] = l->likelihoods[i] / total;
 
-    }
-    // }// acc kernels
-} // acc data
+        }
+        // }// acc kernels
+    } // acc data
 }
 
 // Frees memory allocated for a softmax layer.

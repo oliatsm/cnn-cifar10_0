@@ -13,7 +13,7 @@
 #include "timer.h"
 // #include "tests.h"
 
-#define NUM_IMAGES 1200  // Number of Input Data
+#define NUM_IMAGES 50000  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -253,6 +253,10 @@ int main() {
     t2 = clock();
     ttotal += t2 - t1;
     #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
+
+    // arr2txt(input[NUM_IMAGES-1],L1->in_height,L1->in_depth,"L1-input.txt");
+    // arr2txt(L1->padded_input,L1->padded_height,L1->in_depth,"L1-padded-input.txt");
+        
 
     printf("\n");
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
