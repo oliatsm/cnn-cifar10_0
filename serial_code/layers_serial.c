@@ -146,12 +146,9 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
                         int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
                         int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
                         int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
-                        // If in range of input
-                        if (x_i >= 0 && x_j >= 0 && x_i < l->in_width && x_j < l->in_height) {
-                            if (X[x_idx] > max) {
+                        if (X[x_idx] > max) {
                                 max = X[x_idx];
                             } // if max
-                        } // if in range
                     } // for p_i
                 } // for p_j
                 Y[y_idx] = max;

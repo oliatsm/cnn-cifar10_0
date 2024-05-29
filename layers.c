@@ -39,7 +39,7 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 #pragma acc enter data copyin(layer[0:1])
 #pragma acc enter data create(layer->weights[0:K*K*M*D])
 #pragma acc enter data create(layer->bias[0:M])
-#pragma acc enter data create(layer->padded_input[0:layer->padded_size])
+#pragma acc enter data copyin(layer->padded_input[0:layer->padded_size])
 
     return layer;
 }
@@ -60,8 +60,9 @@ void free_conv(Conv_Layer* l) {
 }
 
 void add_padding(float* restrict X, Conv_Layer* l) {
-
+#pragma acc parallel loop present(X,l)
     for (int d = 0; d < l->in_depth; d++) {
+        #pragma acc loop collapse(2) 
         for (int j = 0; j < l->in_height; j++) {
             for (int i = 0; i < l->in_width; i++) {
                 int padded_idx = (d * l->padded_height + (j + l->padding)) * l->padded_width + (i + l->padding);
@@ -77,34 +78,40 @@ void add_padding(float* restrict X, Conv_Layer* l) {
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
     add_padding(X, l);
     // For each output feature map
-// #pragma acc kernels present (l,X,Y)
-// {
-    // #pragma acc loop independent gang
-    for (int m = 0; m < l->out_depth; m++) {
-        // #pragma acc loop collapse(2) independent worker
-        for (int j = 0; j < l->out_height; j++) {
-            for (int i = 0; i < l->out_width; i++) {
-                int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
-                // Calculate dot product of Weights*Input 
-                float sum = 0.0;//l->bias[m]; // Add bias
-                // #pragma acc loop collapse(3) independent
-                for (int c = 0; c < l->in_depth; c++) {
-                    for (int f_j = 0; f_j < l->filter_width; f_j++) {
-                        for (int f_i = 0; f_i < l->filter_width; f_i++) {
-                            int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-                            int x_j = j * l->stride + f_j;                                                             // Input height index, increased by stride
-                            int x_i = i * l->stride + f_i;                                                             // Input width index, increased by stride
-                            int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
+#pragma acc kernels present (l,X,Y)
+    {
+        #pragma acc loop independent 
+        for (int m = 0; m < l->out_depth; m++) {
+            // int x_j = 0;
+            #pragma acc loop independent 
+            for (int j = 0; j < l->out_height; j++) {
+                // int x_i = 0;
+                #pragma acc loop independent
+                for (int i = 0; i < l->out_width; i++) {
+                    // int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
+                    // Calculate dot product of Weights*Input 
+                    float sum = 0.0;//l->bias[m]; // Add bias
+                    #pragma acc loop independent
+                    for (int c = 0; c < l->in_depth; c++) {
+                        for (int f_j = 0; f_j < l->filter_width; f_j++) {
+                            for (int f_i = 0; f_i < l->filter_width; f_i++) {
+                                int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
+                                // int x_j = j * l->stride + f_j;  // Input height index, increased by stride
+                                // int x_i = i * l->stride + f_i;  // Input width index, increased by stride
+                                int x_idx = c * l->padded_height * l->padded_width + ( j * l->stride + f_j) * l->padded_width + (i * l->stride + +f_i); // Input index
                                 sum += l->weights[f_idx] * l->padded_input[x_idx];
-                        } // for f_i
-                    } // for f_j
-                } // for c
-                sum += l->bias[m]; // Add bias
-                Y[y_idx] = sum; // Save output result
-            } // for i
-        } // for j
-    } // for m
-// } //acc kernels
+                            } // for f_i
+                        } // for f_j
+                    } // for c
+                    sum += l->bias[m]; // Add bias
+                    // Y[y_idx] = sum; // Save output result
+                    Y[i + (l->out_width * (j + m * l->out_height))] = sum;
+                    // x_i += l->stride;
+                } // for i
+                // x_j += l->stride;
+            } // for j
+        } // for m
+    } //acc kernels
 
 }
 
@@ -186,25 +193,22 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
 #pragma acc kernels present(X,l,Y)
     {
         // For each output feature map
-#pragma acc loop independent
+#pragma acc loop independent gang
         for (int m = 0; m < l->out_depth; m++) {
-#pragma acc loop collapse(2) independent
+#pragma acc loop independent worker
             for (int j = 0; j < l->out_height; j++) {
                 for (int i = 0; i < l->out_width; i++) {
                     // Find Max in pooling filter
                     float max = -INFINITY;
-#pragma acc loop collapse(2) seq
+#pragma acc loop reduction(max:max)
                     for (int p_j = 0; p_j < l->pool_width; p_j++) {
                         for (int p_i = 0; p_i < l->pool_width; p_i++) {
-                            int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
-                            int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
+                            int x_j = j * l->stride + p_j; // Input height index, increased by stride
+                            int x_i = i * l->stride + p_i; // Input width index, increased by stride
                             int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
-                            // If in range of input
-                            // if (x_i >= 0 && x_j >= 0 && x_i < l->in_width && x_j < l->in_height) {
-                                if (X[x_idx] > max) {
-                                    max = X[x_idx];
-                                } // if max
-                            // } // if in range
+                            if (X[x_idx] > max) {
+                                max = X[x_idx];
+                            } // if max
                         } // for p_i
                     } // for p_j
                     int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
@@ -265,10 +269,10 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
         for (int i = 0; i < l->out_depth; i++) {
             // Calculate dot product of input and weights
             float sum = 0.0; // add bias
-            // #pragma acc parallel loop reduction(+:sum)
+            #pragma acc loop reduction(+:sum)
             for (int j = 0; j < l->in_neurons; j++) {
-                int w_idx = j + i * l->in_neurons; // Weight index
-                sum += X[j] * l->weights[w_idx];
+                // int w_idx = j + i * l->in_neurons; // Weight index
+                sum += X[j] * l->weights[j + i * l->in_neurons];
             }
             sum += l->bias[i];
             Y[i] = sum;
@@ -420,15 +424,13 @@ Softmax_Layer* make_softmax_layer(int W, int H, int D) {
 // X: Input data, l: Softmax layer, Y: Output data
 void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 
-    float max = X[0];
+    float max = -INFINITY;
     float total = 0.0f;
-#pragma acc data copyin(max,total) present(l,X,Y)
+#pragma acc data present(l,X,Y) create(max,total)//copyin(max,total) 
     {
-        // #pragma acc kernels
-        // {
         // Compute max activation
 #pragma acc parallel loop reduction(max:max)
-        for (int i = 1; i < l->out_depth; i++) {
+        for (int i = 0; i < l->out_depth; i++) {
             if (X[i] > max) {
                 max = X[i];
             }

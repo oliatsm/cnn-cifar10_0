@@ -8,7 +8,7 @@
 #include "layers_serial.h"
 #include "malloc2D.h"
 
-#define NUM_IMAGES 50000  // Number of Input Data
+#define NUM_IMAGES 1200  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
