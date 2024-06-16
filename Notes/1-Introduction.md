@@ -5,3 +5,23 @@
 ## Εργαλεία υλοποίησης
 
 ### Git - version control
+
+## Υλικό (Hardware) που Χρησιμοποιήθηκε
+
+### Σύστημα Υπολογιστή
+- **Μητρική Πλακέτα (Motherboard):** Dell PowerEdge R740
+- **Κεντρική Μονάδα Επεξεργασίας (CPU):** Intel Xeon Silver 4116 2.10GHz,  πυρήνες 24 
+- **Μνήμη RAM:** 128 GB
+- **Μονάδα Αποθήκευσης (Storage):** Samsung 970 EVO Plus NVMe SSD, 1 TB
+
+### Κάρτα Γραφικών (GPU)
+- **Κατασκευαστής και Μοντέλο:** NVIDIA GeForce RTX 3080
+- **Αρχιτεκτονική:** Ampere
+- **Πυρήνες CUDA:** 8704
+- **Μνήμη VRAM:** 10 GB GDDR6X
+- **Συχνότητα Λειτουργίας:** 1440 MHz (Base), 1710 MHz (Boost)
+- **Λογισμικό και Δράιβερς:** NVIDIA Driver Version 465.89, CUDA Toolkit 11.3, cuDNN 8.1
+
+### Λογισμικό Υποστήριξης
+- **Λειτουργικό Σύστημα (Operating System):** Ubuntu 20.04 LTS
+- **Εργαλεία Προγραμματισμού και Βιβλιοθήκες:** CUDA Toolkit 11.3, OpenCL 2.1, Python 3.8

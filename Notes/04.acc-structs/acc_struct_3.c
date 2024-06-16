@@ -25,6 +25,9 @@ void free_point(point *A);
 
 int main(){
 
+int version = _OPENACC;
+    printf("OpenACC runtime version: %d.%d\n", version/100, version%100);
+
     float *base = malloc(sizeof(float)*SIZE);
     init_base(base);
     #pragma acc enter data copyin(base[0:SIZE])
