@@ -21,5 +21,5 @@ with plt.style.context(['science','notebook']):
     plt.yticks([int(time) for time in execution_times],fontsize=8)
 
     # Show the plot
-    plt.savefig('execution_times-3.jpg', dpi=300)  # Specify the filename with .jpg extension and optional DPI setting
+    plt.savefig('figures/fig-1.jpg', dpi=300)  # Specify the filename with .jpg extension and optional DPI setting
     plt.close()
