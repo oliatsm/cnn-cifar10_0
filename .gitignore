@@ -20,3 +20,4 @@ out*
 outputs/
 serial_code/gmon.out
 gmon.out
+serial_code/cnn-cifar10-prof
