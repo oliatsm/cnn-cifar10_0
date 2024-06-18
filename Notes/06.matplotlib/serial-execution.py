@@ -3,7 +3,7 @@ import scienceplots
 
 # Example data
 num_images = [1200, 13400, 25600, 37800, 50000]  # Number of input images
-execution_times = [34.827892, 536.529739, 851.306370, 1245.024988, 1761.983244]  # Execution times in seconds
+execution_times = [36.961910, 424.840853, 829.744195, 1188.364496, 1569.110519]  # Execution times in seconds
 
 # Create the bar plot
 with plt.style.context(['science','notebook']):
