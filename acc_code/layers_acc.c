@@ -46,19 +46,19 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
   // For each output feature map
   int weight_size = l->filter_width*l->filter_width*l->out_depth*l->in_depth;
   int in_size = l->in_depth*l->in_height*l->in_width;
-  #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth]) copyout(Y[0:l->out_size])
-  {
-  #pragma acc kernels 
-  {
-    #pragma acc loop independent
+  // #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth]) copyout(Y[0:l->out_size])
+  // {
+  // #pragma acc kernels 
+  // {
+  //   #pragma acc loop independent
   for (int m = 0; m < l->out_depth; m++) {
-    #pragma acc loop independent
+    // #pragma acc loop independent
     for (int j = 0; j < l->out_height; j++) {
-      #pragma acc loop independent
+      // #pragma acc loop independent
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
         // Calculate dot product of Weights*Input
-        float sum = 0.0;
+        float sum = 0.0f;
         for (int c = 0; c < l->in_depth; c++) {
           for (int f_j = 0; f_j < l->filter_width; f_j++) {
             for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -78,8 +78,8 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
       } // for i
     } // for j
   } // for m
-  } //acc-kernels
-  } //acc-data
+  // } //acc-kernels
+  // } //acc-data
 }
 
 // Creates a ReLU activation layer.
@@ -206,11 +206,12 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
-    float sum = l->bias[i]; // add bias
+    float sum = 0.0f; 
     for (int j = 0; j < l->in_neurons; j++) {
       int w_idx = j + i * l->in_neurons; // Weight index
       sum += X[j] * l->weights[w_idx];
     }
+    sum += l->bias[i]; // add bias
     Y[i] = sum;
   }
 }

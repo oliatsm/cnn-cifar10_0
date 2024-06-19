@@ -49,7 +49,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
             for (int i = 0; i < l->out_width; i++) {
                 int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
                 // Calculate dot product of Weights*Input
-                float sum = l->bias[m]; // Add bias
+                float sum = 0.0;
                 for (int c = 0; c < l->in_depth; c++) {
                     for (int f_j = 0; f_j < l->filter_width; f_j++) {
                         for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -64,6 +64,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
                         } // for f_i
                     } // for f_j
                 } // for c
+                sum += l->bias[m]; // Add bias
                 Y[y_idx] = sum; // Save output result
             } // for i
         } // for j

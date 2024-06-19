@@ -5,7 +5,7 @@ DEBUG_FLAGS = -g
 
 SRC = main_serial.c layers_serial.c malloc2D.c
 OBJ = $(SRC:.c=.o)
-EXECUTABLE = cnn-cifar10-serial
+EXECUTABLE = cnn-cifar10-serial-2
 EXECUTABLE_PROFILE = cnn-cifar10-serial-profile
 EXECUTABLE_DEBUG = cnn-cifar10-serial-debug
 
