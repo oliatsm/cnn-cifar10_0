@@ -48,8 +48,8 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
   int in_size = l->in_depth*l->in_height*l->in_width;
   // #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth]) copyout(Y[0:l->out_size])
   // {
-  // #pragma acc kernels 
-  // {
+  #pragma acc kernels 
+  {
     // #pragma acc loop independent
   for (int m = 0; m < l->out_depth; m++) {
     // #pragma acc loop independent
@@ -77,7 +77,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
       } // for i
     } // for j
   } // for m
-  // } //acc-kernels
+  } //acc-kernels
   // } //acc-data
 }
 
