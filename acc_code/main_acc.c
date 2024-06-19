@@ -8,7 +8,10 @@
 #include "layers_acc.h"
 #include "malloc2D.h"
 
+#ifndef NUM_IMAGES
 #define NUM_IMAGES 1200  // Number of Input Data
+#endif
+
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -103,7 +106,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Serial Code\n");
+    printf("OpenACC Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -217,7 +220,7 @@ int main() {
     t2 = clock();
     ttotal += t2 - t1;
 
-    // arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs-acc.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
