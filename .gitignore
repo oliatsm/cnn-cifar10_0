@@ -23,3 +23,4 @@ gmon.out
 serial_code/cnn-cifar10*
 acc_code-2/
 acc_code/cnn-cifar10*
+acc_code/cnn-cifar10-acc

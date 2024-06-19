@@ -46,8 +46,8 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
   // For each output feature map
   int weight_size = l->filter_width*l->filter_width*l->out_depth*l->in_depth;
   int in_size = l->in_depth*l->in_height*l->in_width;
-  // #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth]) copyout(Y[0:l->out_size])
-  // {
+  #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth]) copyout(Y[0:l->out_size])
+  {
   #pragma acc kernels 
   {
     // #pragma acc loop independent
@@ -78,7 +78,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
     } // for j
   } // for m
   } //acc-kernels
-  // } //acc-data
+  } //acc-data
 }
 
 // Creates a ReLU activation layer.
