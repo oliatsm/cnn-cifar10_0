@@ -1,6 +1,6 @@
 a.out
 build/
-cnn-cifar10
+cnn-cifar10*
 cifar
 nv_cifar
 nv_cnn
@@ -12,7 +12,7 @@ Notes/.~*
 Notes/02.arrays/Chapter4-master/
 Notes/02.arrays/Chapter4-master.zip
 Notes/03.simple-cnn/*.o
-Notes/03.simple-cnn/cnn
+Notes/03.simple-cnn/cnn*
 Notes/03.simple-cnn/out_*
 Notes/03.simple-cnn/simple-cnn-2/out*
 out*
@@ -20,4 +20,6 @@ out*
 outputs/
 serial_code/gmon.out
 gmon.out
-serial_code/cnn-cifar10-prof
+serial_code/cnn-cifar10*
+acc_code-2/
+acc_code/cnn-cifar10*
