@@ -27,12 +27,12 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 
   layer->padded_width = W + 2 * P;
   layer->padded_height = H + 2 * P;
-  layer->padded_size = layer->padded_height*layer->padded_width*D;
+  layer->padded_size = layer->padded_height * layer->padded_width * D;
 
   // Allocate memory for weights and bias arrays
   layer->weights = malloc(sizeof(float) * K * K * M * D);
   layer->bias = malloc(sizeof(float) * M);
-  layer->in_padded = calloc(layer->padded_size,sizeof(float));
+  layer->in_padded = calloc(layer->padded_size, sizeof(float));
 
   return layer;
 }
@@ -45,37 +45,40 @@ void free_conv(Conv_Layer* l) {
   free(l);
 }
 
-// #pragma acc routine
-void pad_input(float* X, Conv_Layer* l) {
-    for (int c = 0; c < l->in_depth; c++) {
-        for (int j = 0; j < l->in_height; j++) {
-            for (int i = 0; i < l->in_width; i++) {
-                int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
-                int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
-                l->in_padded[padded_idx] = X[in_idx];
-            }
-        }
+#pragma acc routine 
+void pad_input(float* restrict X, Conv_Layer* l) {
+  #pragma acc loop 
+  for (int c = 0; c < l->in_depth; c++) {
+    for (int j = 0; j < l->in_height; j++) {
+      for (int i = 0; i < l->in_width; i++) {
+        int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
+        int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
+        l->in_padded[padded_idx] = X[in_idx];
+      }
     }
+  }
 }
 
 
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
-    pad_input(X, l);
 
-  // int weight_size = l->filter_width*l->filter_width*l->out_depth*l->in_depth;
-  // int in_size = l->in_depth*l->in_height*l->in_width;
-  // #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth],l->in_padded[0:l->padded_size]) copyout(Y[0:l->out_size])
-  // {
-  // #pragma acc kernels 
-  // {
-    // #pragma acc loop independent
+  int weight_size = l->filter_width*l->filter_width*l->out_depth*l->in_depth;
+  int in_size = l->in_depth*l->in_height*l->in_width;
+  
+  #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth],l->in_padded[0:l->padded_size]) copyout(Y[0:l->out_size])
+  {
+  #pragma acc kernels 
+  {
+      pad_input(X, l);
+
+    #pragma acc loop independent
   // For each output feature map
   for (int m = 0; m < l->out_depth; m++) {
-    // #pragma acc loop independent
+    #pragma acc loop independent
     for (int j = 0; j < l->out_height; j++) {
-      // #pragma acc loop independent
+      #pragma acc loop independent
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
         // Calculate dot product of Weights*Input
@@ -86,8 +89,8 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
               int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
               int x_j = j * l->stride + f_j; // Input height index, increased by stride
               int x_i = i * l->stride + f_i; // Input width index, increased by stride
-                int x_idx = c * l->padded_height * l->padded_width + x_j *l->padded_width + x_i; // Input index
-                sum += l->weights[f_idx] * l->in_padded[x_idx];
+              int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
+              sum += l->weights[f_idx] * l->in_padded[x_idx];
             } // for f_i
           } // for f_j
         } // for c
@@ -96,8 +99,8 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
       } // for i
     } // for j
   } // for m
-  // } //acc-kernels
-  // } //acc-data
+  } //acc-kernels
+  } //acc-data
 }
 
 // Creates a ReLU activation layer.
@@ -224,7 +227,7 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
-    float sum = 0.0f; 
+    float sum = 0.0f;
     for (int j = 0; j < l->in_neurons; j++) {
       int w_idx = j + i * l->in_neurons; // Weight index
       sum += X[j] * l->weights[w_idx];
