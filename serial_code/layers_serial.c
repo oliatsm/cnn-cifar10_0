@@ -40,16 +40,38 @@ void free_conv(Conv_Layer* l) {
     free(l);
 }
 
+void pad_input(float* X, float* X_padded, Conv_Layer* l) {
+    int padded_height = l->in_height + 2 * l->padding;
+    int padded_width = l->in_width + 2 * l->padding;
+    for (int c = 0; c < l->in_depth; c++) {
+        for (int j = 0; j < l->in_height; j++) {
+            for (int i = 0; i < l->in_width; i++) {
+                int padded_idx = (j + l->padding) * padded_width + (i + l->padding) + c * padded_height * padded_width;
+                int orig_idx = j * l->in_width + i + c * l->in_height * l->in_width;
+                X_padded[padded_idx] = X[orig_idx];
+            }
+        }
+    }
+}
+
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
+
+    int padded_height = l->in_height + 2 * l->padding;
+    int padded_width = l->in_width + 2 * l->padding;
+    int padded_size = l->in_depth * padded_height * padded_width;
+    float* X_padded = (float*)calloc(padded_size, sizeof(float));
+
+    pad_input(X, X_padded, l);
+
     // For each output feature map
     for (int m = 0; m < l->out_depth; m++) {
         for (int j = 0; j < l->out_height; j++) {
             for (int i = 0; i < l->out_width; i++) {
                 int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
                 // Calculate dot product of Weights*Input
-                float sum = 0.0;
+                float sum = 0.0f;
                 for (int c = 0; c < l->in_depth; c++) {
                     for (int f_j = 0; f_j < l->filter_width; f_j++) {
                         for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -195,11 +217,12 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
     // For every output neuron
     for (int i = 0; i < l->out_depth; i++) {
         // Calculate dot product of input and weights
-        float sum = l->bias[i]; // add bias
+        float sum = 0.0f;
         for (int j = 0; j < l->in_neurons; j++) {
             int w_idx = j + i * l->in_neurons; // Weight index
             sum += X[j] * l->weights[w_idx];
         }
+        sum += l->bias[i]; // add bias
         Y[i] = sum;
     }
 }
