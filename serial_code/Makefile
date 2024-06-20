@@ -1,5 +1,5 @@
 CC = nvc
-CFLAGS = -Minfo=all -c11 -Wall -Wextra -march=native 
+CFLAGS = -Minfo=all -c11 -Wall -Wextra -march=native -acc
 PROFILE_FLAGS = -pg
 DEBUG_FLAGS = -g
 
