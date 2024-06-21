@@ -90,6 +90,7 @@ typedef struct conv_layer {
     int out_depth;      // Output depth
     
     int out_size;       // Output volume size
+    int weights_size;   //Weights volume size
 
     float* weights;     // Filter weights
     float* bias;        // Bias values

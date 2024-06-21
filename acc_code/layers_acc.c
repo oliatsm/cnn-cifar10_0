@@ -15,6 +15,7 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 
   layer->filter_width = K;
   layer->num_filters = M;
+  layer->weights_size = K * K * M * D;
 
   layer->stride = S;
   layer->padding = P;
@@ -30,9 +31,13 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
   layer->padded_size = layer->padded_height * layer->padded_width * D;
 
   // Allocate memory for weights and bias arrays
-  layer->weights = malloc(sizeof(float) * K * K * M * D);
+  layer->weights = malloc(sizeof(float) * layer->weights_size);
   layer->bias = malloc(sizeof(float) * M);
   layer->in_padded = calloc(layer->padded_size, sizeof(float));
+
+// #pragma acc enter data copyin(layer[0:1])
+// #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
+// #pragma acc enter data copyin(layer->in_padded[0:layer->padded_size])
 
   return layer;
 }
@@ -64,42 +69,42 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
-  int weight_size = l->filter_width*l->filter_width*l->out_depth*l->in_depth;
-  int in_size = l->in_depth*l->in_height*l->in_width;
-  
-  #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:weight_size],l->bias[0:l->out_depth],l->in_padded[0:l->padded_size]) copyout(Y[0:l->out_size])
+  // int weight_size = l->filter_width * l->filter_width * l->out_depth * l->in_depth;
+  int in_size = l->in_depth * l->in_height * l->in_width;
+
+  #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:l->weights_size],l->bias[0:l->out_depth],l->in_padded[0:l->padded_size]) copyout(Y[0:l->out_size])
   {
-  #pragma acc kernels 
-  {
+    #pragma acc kernels 
+    {
       pad_input(X, l);
 
-    #pragma acc loop independent
-  // For each output feature map
-  for (int m = 0; m < l->out_depth; m++) {
-    #pragma acc loop independent
-    for (int j = 0; j < l->out_height; j++) {
       #pragma acc loop independent
-      for (int i = 0; i < l->out_width; i++) {
-        int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
-        // Calculate dot product of Weights*Input
-        float sum = 0.0f;
-        for (int c = 0; c < l->in_depth; c++) {
-          for (int f_j = 0; f_j < l->filter_width; f_j++) {
-            for (int f_i = 0; f_i < l->filter_width; f_i++) {
-              int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-              int x_j = j * l->stride + f_j; // Input height index, increased by stride
-              int x_i = i * l->stride + f_i; // Input width index, increased by stride
-              int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
-              sum += l->weights[f_idx] * l->in_padded[x_idx];
-            } // for f_i
-          } // for f_j
-        } // for c
-        sum += l->bias[m]; // Add bias
-        Y[y_idx] = sum; // Save output result
-      } // for i
-    } // for j
-  } // for m
-  } //acc-kernels
+      // For each output feature map
+      for (int m = 0; m < l->out_depth; m++) {
+        #pragma acc loop independent
+        for (int j = 0; j < l->out_height; j++) {
+          #pragma acc loop independent
+          for (int i = 0; i < l->out_width; i++) {
+            int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
+            // Calculate dot product of Weights*Input
+            float sum = 0.0f;
+            for (int c = 0; c < l->in_depth; c++) {
+              for (int f_j = 0; f_j < l->filter_width; f_j++) {
+                for (int f_i = 0; f_i < l->filter_width; f_i++) {
+                  int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
+                  int x_j = j * l->stride + f_j; // Input height index, increased by stride
+                  int x_i = i * l->stride + f_i; // Input width index, increased by stride
+                  int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
+                  sum += l->weights[f_idx] * l->in_padded[x_idx];
+                } // for f_i
+              } // for f_j
+            } // for c
+            sum += l->bias[m]; // Add bias
+            Y[y_idx] = sum; // Save output result
+          } // for i
+        } // for j
+      } // for m
+    } //acc-kernels
   } //acc-data
 }
 
@@ -176,8 +181,8 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
         float max = -INFINITY;
         for (int p_j = 0; p_j < l->pool_width; p_j++) {
           for (int p_i = 0; p_i < l->pool_width; p_i++) {
-            int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
-            int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
+            int x_j = j * l->stride + p_j; // Input height index, increased by stride
+            int x_i = i * l->stride + p_i; // Input width index, increased by stride
             int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
             if (X[x_idx] > max) {
               max = X[x_idx];
