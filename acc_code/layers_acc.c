@@ -35,9 +35,9 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
   layer->bias = malloc(sizeof(float) * M);
   layer->in_padded = calloc(layer->padded_size, sizeof(float));
 
-// #pragma acc enter data copyin(layer[0:1])
-// #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
-// #pragma acc enter data copyin(layer->in_padded[0:layer->padded_size])
+#pragma acc enter data copyin(layer[0:1])
+#pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
+#pragma acc enter data copyin(layer->in_padded[0:layer->padded_size])
 
   return layer;
 }
@@ -45,14 +45,20 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 // Frees memory allocated for a convolutional layer.
 // l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer* l) {
+
+  #pragma acc exit data delete(l->in_padded[0:l->padded_size])
+  #pragma acc exit data delete(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
+  #pragma acc exit data delete(l[0:1])
+
+  free(l->in_padded);
   free(l->bias);
   free(l->weights);
   free(l);
 }
 
-#pragma acc routine 
+#pragma acc routine
 void pad_input(float* restrict X, Conv_Layer* l) {
-  #pragma acc loop 
+  #pragma acc loop
   for (int c = 0; c < l->in_depth; c++) {
     for (int j = 0; j < l->in_height; j++) {
       for (int i = 0; i < l->in_width; i++) {
@@ -69,12 +75,11 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
-  // int weight_size = l->filter_width * l->filter_width * l->out_depth * l->in_depth;
   int in_size = l->in_depth * l->in_height * l->in_width;
 
-  #pragma acc data copyin(X[0:in_size],l[0:1]) copyin(l->weights[0:l->weights_size],l->bias[0:l->out_depth],l->in_padded[0:l->padded_size]) copyout(Y[0:l->out_size])
+  #pragma acc data present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
   {
-    #pragma acc kernels 
+    #pragma acc kernels
     {
       pad_input(X, l);
 
@@ -88,6 +93,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
             int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
             // Calculate dot product of Weights*Input
             float sum = 0.0f;
+            #pragma acc loop reduction(+:sum)
             for (int c = 0; c < l->in_depth; c++) {
               for (int f_j = 0; f_j < l->filter_width; f_j++) {
                 for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -293,7 +299,7 @@ int load_conv(Conv_Layer* l, char* file_name) {
   }
 
   fclose(fin);
-
+#pragma acc update device (l->weights[0:l->weights_size],l->bias[0:l->out_depth])
   return 0;
 }
 
