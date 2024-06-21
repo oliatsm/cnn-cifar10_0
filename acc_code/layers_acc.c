@@ -56,11 +56,15 @@ void free_conv(Conv_Layer* l) {
   free(l);
 }
 
-#pragma acc routine
+// #pragma acc routine
 void pad_input(float* restrict X, Conv_Layer* l) {
-  #pragma acc loop
+
+    int in_size = l->in_depth * l->in_height * l->in_width;
+  #pragma acc parallel loop copyin(X[0:in_size]) present(l)
   for (int c = 0; c < l->in_depth; c++) {
+    #pragma acc loop independent
     for (int j = 0; j < l->in_height; j++) {
+      #pragma acc loop independent
       for (int i = 0; i < l->in_width; i++) {
         int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
         int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
@@ -75,42 +79,37 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
-  int in_size = l->in_depth * l->in_height * l->in_width;
-
-  #pragma acc data present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
+  pad_input(X, l);
+  // #pragma acc data present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
+  #pragma acc data present(l) copyout(Y[0:l->out_size])
   {
-    #pragma acc kernels
-    {
-      pad_input(X, l);
-
+  // For each output feature map
+  #pragma acc parallel loop
+  for (int m = 0; m < l->out_depth; m++) {
+    #pragma acc loop independent
+    for (int j = 0; j < l->out_height; j++) {
       #pragma acc loop independent
-      // For each output feature map
-      for (int m = 0; m < l->out_depth; m++) {
-        #pragma acc loop independent
-        for (int j = 0; j < l->out_height; j++) {
-          #pragma acc loop independent
-          for (int i = 0; i < l->out_width; i++) {
-            int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
-            // Calculate dot product of Weights*Input
-            float sum = 0.0f;
-            #pragma acc loop reduction(+:sum)
-            for (int c = 0; c < l->in_depth; c++) {
-              for (int f_j = 0; f_j < l->filter_width; f_j++) {
-                for (int f_i = 0; f_i < l->filter_width; f_i++) {
-                  int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-                  int x_j = j * l->stride + f_j; // Input height index, increased by stride
-                  int x_i = i * l->stride + f_i; // Input width index, increased by stride
-                  int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
-                  sum += l->weights[f_idx] * l->in_padded[x_idx];
-                } // for f_i
-              } // for f_j
-            } // for c
-            sum += l->bias[m]; // Add bias
-            Y[y_idx] = sum; // Save output result
-          } // for i
-        } // for j
-      } // for m
-    } //acc-kernels
+      for (int i = 0; i < l->out_width; i++) {
+        int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
+        // Calculate dot product of Weights*Input
+        float sum = 0.0f;
+        #pragma acc loop reduction(+:sum)
+        for (int c = 0; c < l->in_depth; c++) {
+          for (int f_j = 0; f_j < l->filter_width; f_j++) {
+            for (int f_i = 0; f_i < l->filter_width; f_i++) {
+              int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
+              int x_j = j * l->stride + f_j; // Input height index, increased by stride
+              int x_i = i * l->stride + f_i; // Input width index, increased by stride
+              int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
+              sum += l->weights[f_idx] * l->in_padded[x_idx];
+            } // for f_i
+          } // for f_j
+        } // for c
+        sum += l->bias[m]; // Add bias
+        Y[y_idx] = sum; // Save output result
+      } // for i
+    } // for j
+  } // for m
   } //acc-data
 }
 
