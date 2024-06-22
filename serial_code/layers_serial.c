@@ -45,6 +45,7 @@ void free_conv(Conv_Layer* l) {
   free(l);
 }
 
+// STRUCT PADDING
 void pad_input(float* X, Conv_Layer* l) {
   for (int c = 0; c < l->in_depth; c++) {
     for (int j = 0; j < l->in_height; j++) {
