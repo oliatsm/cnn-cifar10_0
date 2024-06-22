@@ -23,4 +23,7 @@ gmon.out
 serial_code/cnn-cifar10*
 acc_code-2/
 acc_code/cnn-cifar10*
-acc_code/cnn-cifar10-acc
+serial_code/layers_serial-*.c
+serial_code/layers_serial-*.h
+serial_code-p/
+acc_code/*.nsys-rep
