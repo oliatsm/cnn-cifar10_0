@@ -81,7 +81,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
   pad_input(X, l);
   // #pragma acc data present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
-  #pragma acc data present(l) copyout(Y[0:l->out_size])
+  #pragma acc data present(l,Y) //copyout(Y[0:l->out_size])
   {
     // For each output feature map
     #pragma acc parallel loop gang
@@ -141,9 +141,9 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
 
-    int in_size = l->in_depth * l->in_height * l->in_width;
+    // int in_size = l->in_depth * l->in_height * l->in_width;
 
-#pragma acc parallel loop present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
+#pragma acc parallel loop present(l,X) copyout(Y[0:l->out_size])
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }

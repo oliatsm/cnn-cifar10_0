@@ -168,7 +168,7 @@ int main() {
 
     printf("Create Ouputs time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
 
-
+#pragma acc enter data create(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
     //Net Forward
     t1 = clock();
     for (int i = 0; i < NUM_IMAGES; i++) {
@@ -273,6 +273,8 @@ int main() {
     ttotal += t2 - t1;
 
     printf("Net Accuracy time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+
+#pragma acc exit data delete(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
 
     // Free memory
     t1 = clock();
