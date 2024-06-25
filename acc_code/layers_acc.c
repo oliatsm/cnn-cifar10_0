@@ -59,8 +59,7 @@ void free_conv(Conv_Layer* l) {
 // #pragma acc routine
 void pad_input(float* restrict X, Conv_Layer* l) {
 
-  int in_size = l->in_depth * l->in_height * l->in_width;
-  #pragma acc parallel loop copyin(X[0:in_size]) present(l) //collapse(3)
+  #pragma acc parallel loop present(X,l) //collapse(3) copyin(X[0:in_size])
   for (int c = 0; c < l->in_depth; c++) {
     #pragma acc loop  //collapse(2)
     for (int j = 0; j < l->in_height; j++) {
@@ -80,37 +79,34 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
   pad_input(X, l);
-  // #pragma acc data present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
-  #pragma acc data present(l,Y) //copyout(Y[0:l->out_size])
-  {
-    // For each output feature map
-    #pragma acc parallel loop gang
-    for (int m = 0; m < l->out_depth; m++) {
+// #pragma acc data present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
+// For each output feature map
+  #pragma acc parallel loop present(l,Y) gang collapse(2)
+  for (int m = 0; m < l->out_depth; m++) {
+    // #pragma acc loop worker
+    for (int j = 0; j < l->out_height; j++) {
       #pragma acc loop worker
-      for (int j = 0; j < l->out_height; j++) {
-        #pragma acc loop 
-        for (int i = 0; i < l->out_width; i++) {
-          int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
-          // Calculate dot product of Weights*Input
-          float sum = 0.0f;
-          #pragma acc loop reduction(+:sum) vector
-          for (int c = 0; c < l->in_depth; c++) {
-            for (int f_j = 0; f_j < l->filter_width; f_j++) {
-              for (int f_i = 0; f_i < l->filter_width; f_i++) {
-                int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-                int x_j = j * l->stride + f_j; // Input height index, increased by stride
-                int x_i = i * l->stride + f_i; // Input width index, increased by stride
-                int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
-                sum += l->weights[f_idx] * l->in_padded[x_idx];
-              } // for f_i
-            } // for f_j
-          } // for c
-          sum += l->bias[m]; // Add bias
-          Y[y_idx] = sum; // Save output result
-        } // for i
-      } // for j
-    } // for m
-  } //acc-data
+      for (int i = 0; i < l->out_width; i++) {
+        int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
+        // Calculate dot product of Weights*Input
+        float sum = 0.0f;
+        #pragma acc loop reduction(+:sum) vector
+        for (int c = 0; c < l->in_depth; c++) {
+          for (int f_j = 0; f_j < l->filter_width; f_j++) {
+            for (int f_i = 0; f_i < l->filter_width; f_i++) {
+              int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
+              int x_j = j * l->stride + f_j; // Input height index, increased by stride
+              int x_i = i * l->stride + f_i; // Input width index, increased by stride
+              int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; // Input index
+              sum += l->weights[f_idx] * l->in_padded[x_idx];
+            } // for f_i
+          } // for f_j
+        } // for c
+        sum += l->bias[m]; // Add bias
+        Y[y_idx] = sum; // Save output result
+      } // for i
+    } // for j
+  } // for m
 }
 
 // Creates a ReLU activation layer.
@@ -141,7 +137,7 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
 
-#pragma acc parallel loop present(l,X) copyout(Y[0:l->out_size])
+#pragma acc parallel loop present(l,X,Y) //copyout(Y[0:l->out_size])
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
@@ -176,6 +172,9 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
   layer->out_depth = D;
 
   layer->out_size = layer->out_width * layer->out_height * layer->out_depth;
+  
+  // Move max pooling layer data to device memory
+	#pragma acc enter data copyin(layer[0:1])
 
   return layer;
 }
@@ -184,12 +183,16 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
   // For each output feature map
+  #pragma acc parallel loop present(X,l,Y) gang collapse(2)
   for (int m = 0; m < l->out_depth; m++) {
+    // #pragma acc loop 
     for (int j = 0; j < l->out_height; j++) {
+      #pragma acc loop worker
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
         // Find Max in pooling filter
         float max = -INFINITY;
+        #pragma acc loop reduction(max:max) vector
         for (int p_j = 0; p_j < l->pool_width; p_j++) {
           for (int p_i = 0; p_i < l->pool_width; p_i++) {
             int x_j = j * l->stride + p_j; // Input height index, increased by stride
@@ -209,6 +212,8 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
 // Frees memory allocated for a max pooling layer.
 // l: Pointer to the max pooling layer to be freed.
 void free_pool(Pool_Layer* l) {
+  // Free memory from device
+	#pragma acc exit data delete(l[0:1])
   free(l);
 }
 

@@ -9,7 +9,7 @@
 #include "malloc2D.h"
 
 #ifndef NUM_IMAGES
-#define NUM_IMAGES 12000  // Number of Input Data
+#define NUM_IMAGES 50000  // Number of Input Data
 #endif
 
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
@@ -169,16 +169,22 @@ int main() {
 
     printf("Create Ouputs time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
 
+#pragma acc enter data create(O0[0:IMAGE_PIXELS],O3[0:L3->out_size],O6[0:L6->out_size])
 #pragma acc enter data create(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
+#pragma acc enter data create(O2[0:L2->out_size],O5[0:L5->out_size],O8[0:L8->out_size])
+#pragma acc enter data create(O9[0:L9->out_size])
+
     
     //Net Forward
     t1 = clock();
     for (int i = 0; i < NUM_IMAGES; i++) {
 
         memcpy(O0,input[i],IMAGE_PIXELS*sizeof(float));
+      #pragma acc update device(O0[0:IMAGE_PIXELS])
 
         t2 = clock();
         conv_forward(O0, L1, O1);
+        // conv_forward(input[i], L1, O1);
         time_conv1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
         t2 = clock();
@@ -212,6 +218,8 @@ int main() {
         t2 = clock();
         pool_forward(O8, L9, O9);
         time_pool3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+    
+    #pragma acc update self(O9[0:L9->out_size])
 
         t2 = clock();
         fc_forward(O9, L10, O10);
@@ -279,6 +287,8 @@ int main() {
     printf("Net Accuracy time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
 
 #pragma acc exit data delete(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
+#pragma acc exit data delete(O0[0:IMAGE_PIXELS],O3[0:L3->out_size],O6[0:L6->out_size])
+
 
     // Free memory
     t1 = clock();
