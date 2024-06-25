@@ -60,11 +60,11 @@ void free_conv(Conv_Layer* l) {
 void pad_input(float* restrict X, Conv_Layer* l) {
 
   int in_size = l->in_depth * l->in_height * l->in_width;
-  #pragma acc parallel loop copyin(X[0:in_size]) present(l) collapse(3)
+  #pragma acc parallel loop copyin(X[0:in_size]) present(l) //collapse(3)
   for (int c = 0; c < l->in_depth; c++) {
-    // #pragma acc loop  //collapse(2)
+    #pragma acc loop  //collapse(2)
     for (int j = 0; j < l->in_height; j++) {
-      // #pragma acc loop 
+      #pragma acc loop 
       for (int i = 0; i < l->in_width; i++) {
         int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
         int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
@@ -86,9 +86,9 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
     // For each output feature map
     #pragma acc parallel loop gang
     for (int m = 0; m < l->out_depth; m++) {
-      #pragma acc loop collapse(2) worker
+      #pragma acc loop worker
       for (int j = 0; j < l->out_height; j++) {
-        // #pragma acc loop 
+        #pragma acc loop 
         for (int i = 0; i < l->out_width; i++) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
           // Calculate dot product of Weights*Input
