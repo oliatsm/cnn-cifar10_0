@@ -152,6 +152,7 @@ int main() {
 
     //Allocate Outputs
     t1 = clock();
+    float* restrict O0 = malloc(sizeof(float) * IMAGE_PIXELS);
     float* restrict O1 = malloc(sizeof(float) * L1->out_size);
     float* restrict O2 = malloc(sizeof(float) * L2->out_size);
     float* restrict O3 = malloc(sizeof(float) * L3->out_size);
@@ -169,12 +170,15 @@ int main() {
     printf("Create Ouputs time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
 
 #pragma acc enter data create(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
+    
     //Net Forward
     t1 = clock();
     for (int i = 0; i < NUM_IMAGES; i++) {
 
+        memcpy(O0,input[i],IMAGE_PIXELS*sizeof(float));
+
         t2 = clock();
-        conv_forward(input[i], L1, O1);
+        conv_forward(O0, L1, O1);
         time_conv1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
         t2 = clock();
@@ -289,6 +293,7 @@ int main() {
     free(O3);
     free(O2);
     free(O1);
+    free(O0);
 
     free_softmax(L11);
     free_fc(L10);
