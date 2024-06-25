@@ -131,12 +131,19 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 
   layer->out_size = layer->out_width * layer->out_height * layer->out_depth;
 
+	// Move ReLU layer data to device memory
+	#pragma acc enter data copyin(layer[0:1])
+
   return layer;
 }
 
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
+
+    int in_size = l->in_depth * l->in_height * l->in_width;
+
+#pragma acc parallel loop present(l) copyin(X[0:in_size]) copyout(Y[0:l->out_size])
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
@@ -145,7 +152,8 @@ void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
 // Frees memory allocated for a ReLU activation layer.
 // l: Pointer to the ReLU layer to be freed.
 void free_relu(ReLU_Layer* l) {
-
+  // Free memory from device
+	#pragma acc exit data delete(l[0:1])
   free(l);
 }
 

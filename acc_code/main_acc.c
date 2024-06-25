@@ -9,7 +9,7 @@
 #include "malloc2D.h"
 
 #ifndef NUM_IMAGES
-#define NUM_IMAGES 1200  // Number of Input Data
+#define NUM_IMAGES 12000  // Number of Input Data
 #endif
 
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
