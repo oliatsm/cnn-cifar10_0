@@ -117,8 +117,7 @@ int main() {
     t1 = clock();
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
-
-    // #pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+#pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
     t2 = clock();
     ttotal += t2 - t1;
@@ -155,7 +154,7 @@ int main() {
 
     //Allocate Outputs
     t1 = clock();
-    float* restrict O0 = malloc(sizeof(float) * IMAGE_PIXELS);
+
     float* restrict O1 = malloc(sizeof(float) * L1->out_size);
     float* restrict O2 = malloc(sizeof(float) * L2->out_size);
     float* restrict O3 = malloc(sizeof(float) * L3->out_size);
@@ -166,16 +165,13 @@ int main() {
     float* restrict O8 = malloc(sizeof(float) * L8->out_size);
     float* restrict O9 = malloc(sizeof(float) * L9->out_size);
     float* restrict O10 = malloc(sizeof(float) * L10->out_size);
-    // float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
-    float* restrict O11 = malloc(sizeof(float) * L10->out_size);
-
+    
     float** restrict output = malloc2D(NUM_IMAGES, L11->out_size);
-
-#pragma acc enter data create(O0[0:IMAGE_PIXELS],O1[0:L1->out_size],O2[0:L2->out_size])
-#pragma acc enter data create(O3[0:L3->out_size],O4[0:L4->out_size],O5[0:L5->out_size])
-#pragma acc enter data create(O6[0:L6->out_size],O7[0:L7->out_size],O8[0:L8->out_size])
-#pragma acc enter data create(O9[0:L9->out_size],O10[0:L10->out_size],O11[0:L11->out_size])
-#pragma acc enter data create(output[0:NUM_IMAGES][0:L11->out_size])
+    // Create Network Data on Device
+#pragma acc enter data create(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
+#pragma acc enter data create(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
+#pragma acc enter data create(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
+#pragma acc enter data create(O10[0:L10->out_size],output[0:NUM_IMAGES][0:L11->out_size])
 
     t2 = clock();
     ttotal += t2 - t1;
@@ -186,12 +182,8 @@ int main() {
     t1 = clock();
     for (int i = 0; i < NUM_IMAGES; i++) {
 
-        memcpy(O0,input[i],IMAGE_PIXELS*sizeof(float));
-      #pragma acc update device(O0[0:IMAGE_PIXELS])
-
         t2 = clock();
-        conv_forward(O0, L1, O1);
-        // conv_forward(input[i], L1, O1);
+        conv_forward(input[i], L1, O1);
         time_conv1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
         t2 = clock();
@@ -231,13 +223,11 @@ int main() {
         time_fc += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
         t2 = clock();
-        // softmax_forward(O10, L11, O11);
         softmax_forward(O10, L11, output[i]);
         time_softmax += (double)(clock() - t2) / CLOCKS_PER_SEC;
-// #pragma acc update self(O11[0:L11->out_size])
-//         memcpy(output[i],O11,L11->out_size*sizeof(float));
     }
 
+    // Copy results for Device to Host
     #pragma acc update self(output[0:NUM_IMAGES][0:L11->out_size])
     t2 = clock();
     ttotal += t2 - t1;
@@ -299,16 +289,14 @@ int main() {
 
  // Free memory
     t1 = clock();
-#pragma acc exit data delete(output[0:NUM_IMAGES][0:L11->out_size])
 
-#pragma acc exit data delete(O9[0:L9->out_size],O10[0:L10->out_size],O11[0:L11->out_size])
-#pragma acc exit data delete(O6[0:L6->out_size],O7[0:L7->out_size],O8[0:L8->out_size])
-#pragma acc exit data delete(O3[0:L3->out_size],O4[0:L4->out_size],O5[0:L5->out_size])
-#pragma acc exit data delete(O0[0:IMAGE_PIXELS],O1[0:L1->out_size],O2[0:L2->out_size])
+#pragma acc exit data delete(O10[0:L10->out_size],output[0:NUM_IMAGES][0:L11->out_size])
+#pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
+#pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
+#pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
 
     free(output);
     
-    free(O11);
     free(O10);
     free(O9);
     free(O8);
@@ -319,7 +307,6 @@ int main() {
     free(O3);
     free(O2);
     free(O1);
-    free(O0);
 
     free_softmax(L11);
     free_fc(L10);

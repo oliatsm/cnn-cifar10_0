@@ -56,8 +56,8 @@ void free_conv(Conv_Layer* l) {
   free(l);
 }
 
+// Add zero-padding to input data of conv_layer l
 void pad_input(float* restrict X, Conv_Layer* l) {
-
   #pragma acc parallel loop present(X,l)
   for (int c = 0; c < l->in_depth; c++) {
     #pragma acc loop 
@@ -77,7 +77,7 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
-  pad_input(X, l);
+  pad_input(X, l); //Create input with zero-padding
 // For each output feature map
   #pragma acc parallel loop present(l,Y) gang collapse(2)
   for (int m = 0; m < l->out_depth; m++) {
