@@ -236,6 +236,11 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
   layer->weights = (float*)malloc(sizeof(float) * layer->in_neurons * layer->out_depth);
   layer->bias = (float*)malloc(sizeof(float) * layer->out_depth);
 
+ // Move fully connected layer data to device memory
+	#pragma acc enter data copyin(layer[0:1])
+	#pragma acc enter data create(layer->weights[0:layer->in_neurons*layer->out_depth])
+	#pragma acc enter data create(layer->bias[0:layer->out_depth])
+
   return layer;
 }
 
@@ -258,6 +263,12 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
 // Frees memory allocated for a fully connected layer.
 // l: Pointer to the fully connected layer to be freed.
 void free_fc(FC_Layer* l) {
+
+	// Free memory from device
+	#pragma acc exit data delete(l->bias[0:l->out_depth])
+	#pragma acc exit data delete(l->weights[0:l->in_neurons*l->out_depth])
+	#pragma acc exit data delete(l[0:1])
+
   free(l->bias);
   free(l->weights);
   free(l);
@@ -354,6 +365,10 @@ int load_fc(FC_Layer* l, const char* filename) {
 
   fclose(fin);
 
+  // Update device memory with loaded weights and biases
+	#pragma acc update device(l->weights[0:l->in_neurons*l->out_depth],l->bias[0:l->out_depth])
+
+
   return 0;
 }
 
@@ -376,6 +391,10 @@ Softmax_Layer* make_softmax_layer(int W, int H, int D) {
   layer->out_size = layer->out_width * layer->out_height * layer->out_depth;
 
   layer->likelihoods = (float*)malloc(sizeof(float) * layer->out_depth);
+
+  // Move softmax layer data to device memory
+	#pragma acc enter data copyin(layer[0:1])
+	#pragma acc enter data create(layer->likelihoods[0:layer->out_depth])
 
   return layer;
 }
@@ -408,6 +427,10 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 // Frees memory allocated for a softmax layer.
 // l: Pointer to the softmax layer to be freed.
 void free_softmax(Softmax_Layer* l) {
+
+  // Free memory from device
+	#pragma acc exit data delete(l->likelihoods[0:l->out_depth])
+	#pragma acc exit data delete(l[0:1])
 
   free(l->likelihoods);
   free(l);

@@ -164,16 +164,16 @@ int main() {
     float* restrict O9 = malloc(sizeof(float) * L9->out_size);
     float* restrict O10 = malloc(sizeof(float) * L10->out_size);
     float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
+
+#pragma acc enter data create(O0[0:IMAGE_PIXELS],O1[0:L1->out_size],O2[0:L2->out_size])
+#pragma acc enter data create(O3[0:L3->out_size],O4[0:L4->out_size],O5[0:L5->out_size])
+#pragma acc enter data create(O6[0:L6->out_size],O7[0:L7->out_size],O8[0:L8->out_size])
+#pragma acc enter data create(O9[0:L9->out_size],O10[0:L10->out_size],O11[NUM_IMAGES][0:L11->out_size])
+
     t2 = clock();
     ttotal += t2 - t1;
 
     printf("Create Ouputs time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
-
-#pragma acc enter data create(O0[0:IMAGE_PIXELS],O3[0:L3->out_size],O6[0:L6->out_size])
-#pragma acc enter data create(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
-#pragma acc enter data create(O2[0:L2->out_size],O5[0:L5->out_size],O8[0:L8->out_size])
-#pragma acc enter data create(O9[0:L9->out_size])
-
     
     //Net Forward
     t1 = clock();
@@ -286,12 +286,15 @@ int main() {
 
     printf("Net Accuracy time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
 
-#pragma acc exit data delete(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
-#pragma acc exit data delete(O0[0:IMAGE_PIXELS],O3[0:L3->out_size],O6[0:L6->out_size])
 
-
-    // Free memory
+ // Free memory
     t1 = clock();
+
+#pragma acc exit data delete(O9[0:L9->out_size],O10[0:L10->out_size],O11[NUM_IMAGES][0:L11->out_size])
+#pragma acc exit data delete(O6[0:L6->out_size],O7[0:L7->out_size],O8[0:L8->out_size])
+#pragma acc exit data delete(O3[0:L3->out_size],O4[0:L4->out_size],O5[0:L5->out_size])
+#pragma acc exit data delete(O0[0:IMAGE_PIXELS],O1[0:L1->out_size],O2[0:L2->out_size])
+
     free(O11);
     free(O10);
     free(O9);
