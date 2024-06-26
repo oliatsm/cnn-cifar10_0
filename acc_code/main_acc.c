@@ -117,6 +117,9 @@ int main() {
     t1 = clock();
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
+
+    // #pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
+
     t2 = clock();
     ttotal += t2 - t1;
     printf("Load Data time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
@@ -163,12 +166,16 @@ int main() {
     float* restrict O8 = malloc(sizeof(float) * L8->out_size);
     float* restrict O9 = malloc(sizeof(float) * L9->out_size);
     float* restrict O10 = malloc(sizeof(float) * L10->out_size);
-    float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
+    // float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
+    float* restrict O11 = malloc(sizeof(float) * L10->out_size);
+
+    float** restrict output = malloc2D(NUM_IMAGES, L11->out_size);
 
 #pragma acc enter data create(O0[0:IMAGE_PIXELS],O1[0:L1->out_size],O2[0:L2->out_size])
 #pragma acc enter data create(O3[0:L3->out_size],O4[0:L4->out_size],O5[0:L5->out_size])
 #pragma acc enter data create(O6[0:L6->out_size],O7[0:L7->out_size],O8[0:L8->out_size])
-#pragma acc enter data create(O9[0:L9->out_size],O10[0:L10->out_size],O11[NUM_IMAGES][0:L11->out_size])
+#pragma acc enter data create(O9[0:L9->out_size],O10[0:L10->out_size],O11[0:L11->out_size])
+#pragma acc enter data create(output[0:NUM_IMAGES][0:L11->out_size])
 
     t2 = clock();
     ttotal += t2 - t1;
@@ -219,20 +226,23 @@ int main() {
         pool_forward(O8, L9, O9);
         time_pool3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
     
-    #pragma acc update self(O9[0:L9->out_size])
-
         t2 = clock();
         fc_forward(O9, L10, O10);
         time_fc += (double)(clock() - t2) / CLOCKS_PER_SEC;
 
         t2 = clock();
-        softmax_forward(O10, L11, O11[i]);
+        // softmax_forward(O10, L11, O11);
+        softmax_forward(O10, L11, output[i]);
         time_softmax += (double)(clock() - t2) / CLOCKS_PER_SEC;
+// #pragma acc update self(O11[0:L11->out_size])
+//         memcpy(output[i],O11,L11->out_size*sizeof(float));
     }
+
+    #pragma acc update self(output[0:NUM_IMAGES][0:L11->out_size])
     t2 = clock();
     ttotal += t2 - t1;
 
-    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs-acc.txt");    
+    arr2txt_2(output,L11->in_width,L11->in_depth,"Outputs-acc.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
@@ -262,11 +272,11 @@ int main() {
     int predictions[NUM_IMAGES];
     for (int n = 0; n < NUM_IMAGES; n++) {
         int class_o = 0;
-        float max_o = O11[n][0];
+        float max_out = output[n][0];
         for (int i = 1; i < L11->out_depth; i++) {
-            if (max_o < O11[n][i]) {
+            if (max_out < output[n][i]) {
                 class_o = i;
-                max_o = O11[n][i];
+                max_out = output[n][i];
             }
         }
         predictions[n] = class_o;
@@ -289,12 +299,15 @@ int main() {
 
  // Free memory
     t1 = clock();
+#pragma acc exit data delete(output[0:NUM_IMAGES][0:L11->out_size])
 
-#pragma acc exit data delete(O9[0:L9->out_size],O10[0:L10->out_size],O11[NUM_IMAGES][0:L11->out_size])
+#pragma acc exit data delete(O9[0:L9->out_size],O10[0:L10->out_size],O11[0:L11->out_size])
 #pragma acc exit data delete(O6[0:L6->out_size],O7[0:L7->out_size],O8[0:L8->out_size])
 #pragma acc exit data delete(O3[0:L3->out_size],O4[0:L4->out_size],O5[0:L5->out_size])
 #pragma acc exit data delete(O0[0:IMAGE_PIXELS],O1[0:L1->out_size],O2[0:L2->out_size])
 
+    free(output);
+    
     free(O11);
     free(O10);
     free(O9);

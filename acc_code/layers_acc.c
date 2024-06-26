@@ -248,9 +248,11 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
+  #pragma acc parallel loop present(l,X,Y) 
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
     float sum = 0.0f;
+    #pragma loop reduction(+:sum) 
     for (int j = 0; j < l->in_neurons; j++) {
       int w_idx = j + i * l->in_neurons; // Weight index
       sum += X[j] * l->weights[w_idx];
@@ -402,16 +404,22 @@ Softmax_Layer* make_softmax_layer(int W, int H, int D) {
 // Performs the forward pass for a softmax layer.
 // X: Input data, l: Softmax layer, Y: Output data
 void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
+
+  float max = -INFINITY;
+  float total = 0.0f;
+
+  #pragma acc data present(X,l,Y) create(max,total) 
+  {
   // Compute max activation
-  float max = X[0];
-  for (int i = 1; i < l->out_depth; i++) {
+  #pragma acc parallel loop reduction(max:max)
+  for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
       max = X[i];
     }
   }
 
   // Compute exponentials and total
-  float total = 0.0f;
+  #pragma acc parallel loop reduction(+:total) 
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
@@ -419,8 +427,10 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
+  #pragma acc parallel loop 
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;
+  }
   }
 }
 
