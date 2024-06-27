@@ -411,7 +411,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   #pragma acc data present(X,l,Y) create(max,total) 
   {
   // Compute max activation
-  #pragma acc parallel loop reduction(max:max)
+  #pragma acc parallel loop reduction(max:max) num_gangs(1) vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
       max = X[i];
@@ -419,7 +419,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Compute exponentials and total
-  #pragma acc parallel loop reduction(+:total) 
+  #pragma acc parallel loop reduction(+:total) num_gangs(1) vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
@@ -427,7 +427,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
-  #pragma acc parallel loop 
+  #pragma acc parallel loop num_gangs(1) vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;
   }
