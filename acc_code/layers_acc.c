@@ -133,10 +133,10 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
-int i;
+
 // printf("relu out size:%d\n",l->out_size);
-#pragma acc parallel loop present(l,X,Y) cache(X[i]) vector_length(l->out_size/10)
-  for (i = 0; i < l->out_size; i++) {
+#pragma acc parallel loop present(l,X,Y) 
+  for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
 }
@@ -182,7 +182,7 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
   
   // For each output feature map
-  #pragma acc parallel loop present(X,l,Y) gang collapse(2)
+  #pragma acc parallel loop present(X,l,Y) gang collapse(2) 
   for (int m = 0; m < l->out_depth; m++) {
     for (int j = 0; j < l->out_height; j++) {
       #pragma acc loop worker
@@ -248,14 +248,14 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // Performs the forward pass for a fully connected layer.
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
-  int i,j;
+
   // For every output neuron
-  #pragma acc parallel loop present(l,X,Y) num_gangs(10) cache(X[j])
-  for (i = 0; i < l->out_depth; i++) {
+  #pragma acc parallel loop present(l,X,Y) num_gangs(10) 
+  for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
     float sum = 0.0f;
     #pragma loop reduction(+:sum) vector_length(128)
-    for (j = 0; j < l->in_neurons; j++) {
+    for (int j = 0; j < l->in_neurons; j++) {
      int w_idx = j + i * l->in_neurons; // Weight index
       sum += X[j] * l->weights[w_idx];
     }
@@ -410,7 +410,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   float max = -INFINITY;
   float total = 0.0f;
 
-  #pragma acc data present(X,l,Y) create(max,total) 
+  #pragma acc data present(X,l,Y) create(max,total) cache(X[0:10])
   {
   // Compute max activation
   #pragma acc parallel loop reduction(max:max) num_gangs(1) vector_length(10)
