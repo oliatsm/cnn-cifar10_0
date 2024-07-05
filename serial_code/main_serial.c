@@ -3,12 +3,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <time.h> 
+// #include <time.h> 
 
 #include "layers_serial.h"
 #include "malloc2D.h"
+#include "timer.h"
 
-#define NUM_IMAGES 50000  // Number of Input Data
+#define NUM_IMAGES 1200  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -98,7 +99,8 @@ void arr2txt_2(float** arr, int N, int M, char* file_name);
 
 int main() {
     // const char *label_names[]={"airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"};
-    clock_t t1, t2, ttotal = 0;
+    struct timespec t1,t3;
+    double ttotal = 0, t2;
     double time_conv1 = 0, time_relu1 = 0, time_pool1 = 0;
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
@@ -111,15 +113,16 @@ int main() {
 
     // Input: Image Data
     float** restrict input = malloc2D(NUM_IMAGES, IMAGE_PIXELS);
-    t1 = clock();
+    cpu_timer_start(&t1);
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
-    t2 = clock();
-    ttotal += t2 - t1;
-    printf("Load Data time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+
+    t2 = cpu_timer_stop(t1);
+    ttotal += t2;
+    printf("Load Data time:%f seconds\n", t2);
 
     // Network Layers
-    t1 = clock();
+    cpu_timer_start(&t1);
     Conv_Layer* L1 = make_conv_layer(N_in, N_in, C_in, K1, M1, S1, P1);
     ReLU_Layer* L2 = make_relu_layer(L1->out_width, L1->out_height, L1->out_depth);
     Pool_Layer* L3 = make_pool_layer(L2->out_width, L2->out_height, L2->out_depth, K3, S3);
@@ -131,24 +134,25 @@ int main() {
     Pool_Layer* L9 = make_pool_layer(L8->out_width, L8->out_height, L8->out_depth, K9, S9);
     FC_Layer* L10 = make_fc_layer(L9->out_width, L9->out_height, L9->out_depth, M10);
     Softmax_Layer* L11 = make_softmax_layer(L10->out_width, L10->out_height, L10->out_depth);
-    t2 = clock();
-    ttotal += t2 - t1;
+    t2 = cpu_timer_stop(t1);
+    ttotal += t2;
 
-    printf("Create Network time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+    printf("Create Network time:%f seconds\n", t2);
 
     //Loading Layers' parameters
-    t1 = clock();
+    cpu_timer_start(&t1);
     load_conv(L1, "./../snapshot/layer1_conv.txt");
     load_conv(L4, "./../snapshot/layer4_conv.txt");
     load_conv(L7, "./../snapshot/layer7_conv.txt");
     load_fc(L10, "./../snapshot/layer10_fc.txt");
-    t2 = clock();
-    ttotal += t2 - t1;
+    t2 = cpu_timer_stop(t1);
+    ttotal += t2;
 
-    printf("Load Network Parameters time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+    printf("Load Network Parameters time:%f seconds\n", t2);
 
     //Allocate Outputs
-    t1 = clock();
+    cpu_timer_start(&t1);
+
     float* restrict O1 = malloc(sizeof(float) * L1->out_size);
     float* restrict O2 = malloc(sizeof(float) * L2->out_size);
     float* restrict O3 = malloc(sizeof(float) * L3->out_size);
@@ -160,67 +164,68 @@ int main() {
     float* restrict O9 = malloc(sizeof(float) * L9->out_size);
     float* restrict O10 = malloc(sizeof(float) * L10->out_size);
     float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
-    t2 = clock();
-    ttotal += t2 - t1;
+     t2 = cpu_timer_stop(t1);
+    ttotal += t2;
 
-    printf("Create Ouputs time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+    printf("Create Ouputs time:%f seconds\n", t2);
 
 
     //Net Forward
-    t1 = clock();
+    cpu_timer_start(&t1);
     for (int i = 0; i < NUM_IMAGES; i++) {
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         conv_forward(input[i], L1, O1);
-        time_conv1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_conv1 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         relu_forward(O1, L2, O2);
-        time_relu1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_relu1 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         pool_forward(O2, L3, O3);
-        time_pool1 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_pool1 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         conv_forward(O3, L4, O4);
-        time_conv2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_conv2 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         relu_forward(O4, L5, O5);
-        time_relu2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_relu2 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         pool_forward(O5, L6, O6);
-        time_pool2 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_pool2 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         conv_forward(O6, L7, O7);
-        time_conv3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_conv3 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         relu_forward(O7, L8, O8);
-        time_relu3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_relu3 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         pool_forward(O8, L9, O9);
-        time_pool3 += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_pool3 += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         fc_forward(O9, L10, O10);
-        time_fc += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_fc += cpu_timer_stop(t3);
 
-        t2 = clock();
+        cpu_timer_start(&t3);
         softmax_forward(O10, L11, O11[i]);
-        time_softmax += (double)(clock() - t2) / CLOCKS_PER_SEC;
+        time_softmax += cpu_timer_stop(t3);
     }
-    t2 = clock();
-    ttotal += t2 - t1;
+
+    t2 = cpu_timer_stop(t1);
+    ttotal += t2;
 
     arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
-    printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+    printf("Net Forward total time:%f seconds\n", t2);
 
     printf("    Time for conv1: %f seconds\n", time_conv1);
     printf("    Time for relu1: %f seconds\n", time_relu1);
@@ -243,7 +248,7 @@ int main() {
     printf("\n");
 
     // Results
-    t1 = clock();
+    cpu_timer_start(&t1);
     int predictions[NUM_IMAGES];
     for (int n = 0; n < NUM_IMAGES; n++) {
         int class_o = 0;
@@ -266,13 +271,14 @@ int main() {
     }
 
     printf("Net Accuracy: %.2f %% \n", 100 * (float)correct_label / NUM_IMAGES);
-    t2 = clock();
-    ttotal += t2 - t1;
+    t2 = cpu_timer_stop(t1);
+    ttotal += t2;
 
-    printf("Net Accuracy time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
+    printf("Net Accuracy time:%f seconds\n", t2);
+
 
     // Free memory
-    t1 = clock();
+    cpu_timer_start(&t1);
     free(O11);
     free(O10);
     free(O9);
@@ -301,11 +307,11 @@ int main() {
     free_conv(L1);
 
     free(input);
-    t2 = clock();
-    ttotal += t2 - t1;
+    t2 = cpu_timer_stop(t1);
+    ttotal += t2;
 
-    printf("Free memory time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
-    printf("Total time:%f seconds\n", (double)(ttotal) / CLOCKS_PER_SEC);
+    printf("Free memory time:%f seconds\n", t2);
+    printf("Total time:%f seconds\n", ttotal);
 
     printf("END!\n");
 

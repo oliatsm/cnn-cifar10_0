@@ -3,7 +3,7 @@ CFLAGS = -Minfo=all -c11 -Wall -Wextra -march=native
 PROFILE_FLAGS = -pg
 DEBUG_FLAGS = -g
 
-SRC = main_serial.c layers_serial.c malloc2D.c
+SRC = main_serial.c layers_serial.c malloc2D.c timer.c
 OBJ = $(SRC:.c=.o)
 EXECUTABLE = cnn-cifar10-serial
 EXECUTABLE_PROFILE = cnn-cifar10-serial-profile
