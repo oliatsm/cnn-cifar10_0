@@ -81,19 +81,14 @@ typedef struct conv_layer {
     int stride;         // Stride
     int padding;        // Padding
 
-    int padded_height;  // Padding height
-    int padded_width;   // Padding width
-    int padded_size;    // Padding volume size
-    
     int out_width;      // Output width
     int out_height;     // Output height
     int out_depth;      // Output depth
-    
+
     int out_size;       // Output volume size
 
     float* weights;     // Filter weights
     float* bias;        // Bias values
-    float* in_padded;   // Padded input
 
 }Conv_Layer;
 
