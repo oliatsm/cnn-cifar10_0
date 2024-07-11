@@ -16,13 +16,16 @@
 Η σύγχρονη αρχιτεκτονική επεξεργαστών περιλαμβάνει χαρακτηριστικά όπως διευρυμένους καταχωρητές (\en{wide registers}) και διευρυμένες επεξεργαστικές μονάδες (\en{wide processing units}) που επιτρέπουν την επεξεργασία κατά διανύσματα (\en{vector processing}), δηλαδή ταυτόχρονη επεξεργασία των τιμών ενός διανύσματος αντί για μία τιμή. Αυτή η μέθοδος είναι γνωστή ως \en{SIMD – Single Instruction Multiple Data}, όπου μία εντολή χρησιμοποιείται για την επεξεργασία πολλών δεδομένων. Για παράδειγμα, για τον υπολογισμό του αθροίσματος δύο διανυσμάτων:
 
 \selectlanguage{english}
-\usemintedstyle{bw}
-
-\begin{minted}{c}
+% \usemintedstyle{bw}
+\begin{center}
+\begin{minipage}{0.5\textwidth} 
+\begin{minted}{text}
     for (i = 0; i < count; i++) 
       c[i] = a[i] + b[i]; 
     }
 \end{minted}
+\end{minipage}
+\end{center}
   \selectlanguage{greek}
 
 % Εικόνα 3.1 
@@ -39,11 +42,15 @@
 Μπορούμε να δώσουμε περισσότερες πληροφορίες στον μεταγλωττιστή για τη δομή του κώδικα και να έχουμε καλύτερο έλεγχο της διανυσματοποίησης (\en{vectorization}) με εντολές τύπου \src{pragma}. Οι εντολές αυτές είναι για τον προεπεξεργαστή (\en{preprocessor}) και ξεκινάνε με τη δήλωση \src{\#pragma}. Τέτοιες εντολές παρέχει η \en{OpenMP}, στην οποία θα αναφερθούμε εκτενέστερα παρακάτω. Ένα απλό παράδειγμα φαίνεται εδώ:
 
 \selectlanguage{english}
-\begin{minted}{c}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{minted}{text}
     #pragma omp simd
     for (int n = 0; n < N; n++)
       a[n] += b[n];
 \end{minted}
+\end{minipage}
+\end{center}
 \selectlanguage{greek}
 
 Οι εντολές τύπου \src{\#pragma} έχουν καλύτερη απόδοση σε σύγκριση με την απλή προσθήκη επιλογών βελτιστοποίησης (\en{flags}) στον μεταγλωττιστή, καθώς επιτρέπουν την εφαρμογή διανυσματικής επεξεργασίας ακόμα και σε περιπτώσεις περίπλοκων βρόχων.
@@ -69,12 +76,15 @@ To \en{OpenMP} χρησιμοποιείται για ανάπτυξη πολυν
 Ένα παράδειγμα κώδικα φαίνεται παρακάτω:
 
 \selectlanguage{english}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
 \begin{minted}{text}
     #pragma omp parallel for
     for (int i = 0;i < N; i++)
         do_work(i);
 \end{minted}
-
+\end{minipage}
+\end{center}
 \selectlanguage{greek}
 
 Οι οδηγίες του \en{OpenMP} ξεκινάνε με \src{\#pragma omp} και με το \src{parallel} δημιουργεί νήματα καθένα από τα οποία θα εκτελέσουν ένα αντίγραφο του κώδικα που βρίσκεται μέσα στο δομημένο μπλοκ. Με το for οι επαναλήψεις μοιράζονται μεταξύ των νημάτων. Στο τέλος του μπλοκ, τα νήματα συγχρονίζονται και αφού όλα τελειώσουν του υπολογισμούς τους, το πρόγραμμα συνεχίζει την εκτέλεση του. Στην περίπτωση που ο μεταγλωττιστής ή το μηχάνημα που διαθέτουμε δεν υποστηρίζει παραλληλία με \en{OpenMP}, αγνοούνται οι εντολές \src{\#pragma} και το πρόγραμμα τρέχει κανονικά με σειριακό τρόπο.
@@ -293,7 +303,9 @@ To \en{OpenMP} χρησιμοποιείται για ανάπτυξη πολυν
 Η \textit{οδηγία} \src{kernels}, δίνει εντολή στον μεταγλωττιστή να εντοπίσει τους βρόχους που μπορούν να εκτελεστούν παράλληλα στον κώδικα που βρίσκεται στο μπλοκ. Ο προγραμματιστής αφήνει τον μεταγλωττιστή να αναλύσει τον κώδικα και να παραλληλίσει τους βρόχους που θεωρεί πως είναι ασφαλές να το κάνει. Εάν θεωρήσει πως δεν μπορεί να παραλληλοποιηθεί, ο κώδικας θα τρέξει σειριακά. Και στις δύο περιπτώσεις ο μεταγλωττιστής εξασφαλίζει τα σωστά αποτελέσματα.
 
 \selectlanguage{english}
-\begin{minted}{c}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{minted}{text}
     #pragma acc kernels
     {
         for (int i = 0; i < N; i++) {
@@ -304,6 +316,8 @@ To \en{OpenMP} χρησιμοποιείται για ανάπτυξη πολυν
         }
     }
 \end{minted}
+\end{minipage}
+\end{center}
 \selectlanguage{greek}
 
 Με την \textit{οδηγία} \src{parallel}, ο προγραμματιστής ενημερώνει τον μεταγλωττιστή ότι ο κώδικας μπορεί να παραλληλιστεί. Ο μεταγλωττιστής δημιουργεί \textit{ομάδες εργασίας} (\en{gangs}) στη συσκευή και κάθε ομάδα εργασίας θα εκτελέσει ολόκληρο το βρόχο που ακολουθεί. Οι \textit{ομάδες εργασίας}, είναι ομάδες από νήματα που ανήκουν σε \textit{μονάδες εργασίας} (\en{worker threads}) που εκτελούνται ανεξάρτητα, τα οποία αναλύονται παρακάτω. Για να διαμοιραστούν οι επαναλήψεις του βρόχου σε νήματα που θα εκτελεστούν παράλληλα, χρειάζεται η \textit{οδηγία} \src{loop}. 
@@ -329,7 +343,9 @@ To \en{OpenMP} χρησιμοποιείται για ανάπτυξη πολυν
 Οι δύο \textit{οδηγίες} χρησιμοποιούνται συνδυαστικά και αναφέρονται στο βρόχο που ακολουθεί την εντολή \src{\#pragma}. Καθώς τον έλεγχο για την παραλληλοποίηση του κώδικα την έχει ο προγραμματιστής, θέλει προσοχή καθώς πιθανές εξαρτήσεις μεταξύ των δεδομένων στις επαναλήψεις μπορεί να οδηγήσουν σε λάθος αποτελέσματα.
   
 \selectlanguage{english}
-\begin{minted}{c}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{minted}{text}
     #pragma acc parallel loop
         for (int i = 0; i < N; i++) {
           c[i] = a[i] + b[i];
@@ -339,6 +355,8 @@ To \en{OpenMP} χρησιμοποιείται για ανάπτυξη πολυν
           d[i] = a[i] + 5;
         }
 \end{minted}
+\end{minipage}
+\end{center}
 \selectlanguage{greek}
 
 Επιπλέον, το \src{loop} μπορεί να χρησιμοποιηθεί μέσα σε περιοχή που ορίζεται από την \textit{οδηγία} \src{kernels} σε περιπτώσεις που ο μεταγλωττιστής δεν μπορεί να αποφασίσει εάν είναι ανεξάρτητες οι επαναλήψεις μεταξύ τους.
@@ -352,13 +370,17 @@ To \en{OpenMP} χρησιμοποιείται για ανάπτυξη πολυν
 Στην \en{OpenACC}, αυτό υλοποιείται με την \textit{φράση} \en{reduction} και χρησιμοποιείται ως εξής: 
 
 \selectlanguage{english}
-\begin{minted}{c}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{minted}{text}
         total = 0;
     #pragma acc parallel loop reduction(+ : total)
         for (i = 0; i < 100; i++) {
             total = total + data[i];
         }
 \end{minted}
+\end{minipage}
+\end{center}
 \selectlanguage{greek}
 
 \subsubsection{Περιβάλλον Μεταβλητών}
@@ -389,7 +411,9 @@ H \en{OpenACC} είναι σχεδιασμένη για ετερογενή συ�
 Η χρήση των παραπάνω \textit{φράσεων} συνδυάζεται με της \textit{οδηγίες} \src{parallel} και \src{kernels} που ορίζουν περιοχές παραλληλίας, αλλά και με την \textit{οδηγία} \src{data}, με το οποίο ο χρήστης ορίζει \textit{περιοχές δεδομένων} (\en{data regions}) που ορίζουν την \textit{διάρκεια ζωής των δεδομένων} (\en{data lifetime}) στην συσκευή.
 
 \selectlanguage{english}
-   \begin{minted}{c}
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{minted}{text}
     #pragma acc data create(x[0:N]) copyout(y[0:N])
     {
     #pragma acc parallel loop
@@ -404,6 +428,8 @@ H \en{OpenACC} είναι σχεδιασμένη για ετερογενή συ�
     }
     }
 \end{minted}
+\end{minipage}
+\end{center}
   \selectlanguage{greek}
 
 
