@@ -28,3 +28,4 @@ serial_code/layers_serial-*.h
 serial_code-p/
 acc_code/*.nsys-rep
 acc_code/cnn-cifar10-acc
+serial2parallel/
