@@ -54,8 +54,8 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
                     for (int f_j = 0; f_j < l->filter_width; f_j++) {
                         for (int f_i = 0; f_i < l->filter_width; f_i++) {
                             int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-                            int x_j = -l->padding + j * l->stride + f_j;                                                             // Input height index, increased by stride
-                            int x_i = -l->padding + i * l->stride + f_i;                                                             // Input width index, increased by stride
+                            int x_j = -l->padding + j * l->stride + f_j; // Input height index, increased by stride
+                            int x_i = -l->padding + i * l->stride + f_i; // Input width index, increased by stride
                             // If in range of image, else zero
                             if (x_j >= 0 && x_i >= 0 && x_j < l->in_height && x_i < l->in_width) {
                                 int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i; // Input index
@@ -144,8 +144,8 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
                 float max = -INFINITY;
                 for (int p_j = 0; p_j < l->pool_width; p_j++) {
                     for (int p_i = 0; p_i < l->pool_width; p_i++) {
-                        int x_j = j * l->stride + p_j;                            // Input height index, increased by stride
-                        int x_i = i * l->stride + p_i;                            // Input width index, increased by stride
+                        int x_j = j * l->stride + p_j; // Input height index, increased by stride
+                        int x_i = i * l->stride + p_i; // Input width index, increased by stride
                         int x_idx = x_i + (x_j + m * l->in_height) * l->in_width; // Input index
                         if (X[x_idx] > max) {
                                 max = X[x_idx];
