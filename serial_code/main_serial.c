@@ -9,11 +9,11 @@
 #include "malloc2D.h"
 #include "timer.h"
 
-#define NUM_IMAGES 1200  // Number of Input Data
+#define NUM_IMAGES 50000  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
-#define MAX_TRAINING_DATA 1200 // Max number of training data
+#define MAX_TRAINING_DATA 50000 // Max number of training data
 #define MAX_BATCH_DATA 10000    // Max number of samples per batch    
 #define LINE_SIZE 3073  // Bytes of one line in the binary data files
 
@@ -218,11 +218,17 @@ int main() {
         softmax_forward(O10, L11, O11[i]);
         time_softmax += cpu_timer_stop(t3);
     }
+// !!! TEST !!!
+    arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
+    arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
+    arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
 
+
+/// ^^ TEST
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
-    // arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
@@ -348,7 +354,7 @@ void arr2txt_2(float** arr, int N, int M, char* file_name) {
         return;
     }
     fprintf(file, "%d,%d,%d\n", N, N, M);
-    for (int n = 0; n < NUM_IMAGES; n++){
+    for (int n = 0; n < NUM_IMAGES; n+=1200){
     for (int k = 0; k < M; ++k) {
         for (int j = 0; j < N; ++j) {
             for (int i = 0; i < N; ++i) {

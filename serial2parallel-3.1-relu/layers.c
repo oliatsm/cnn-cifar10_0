@@ -387,9 +387,13 @@ Softmax_Layer* make_softmax_layer(int W, int H, int D) {
 // Performs the forward pass for a softmax layer.
 // X: Input data, l: Softmax layer, Y: Output data
 void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
-  // Compute max activation
+  
   float max = -INFINITY;
-  #pragma acc parallel loop present(X,l,Y) reduction(max:max) vector_length(32) 
+  float total = 0.0f;
+  #pragma acc data copyin(max,total) present(X,l,Y)
+  {
+    // Compute max activation
+  #pragma acc parallel loop reduction(max:max) vector vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
       max = X[i];
@@ -397,8 +401,8 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Compute exponentials and total
-  float total = 0.0f;
-#pragma acc parallel loop present(X,l,Y) reduction(+:total) vector_length(32) 
+  
+#pragma acc parallel loop reduction(+:total) vector vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
@@ -406,9 +410,10 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
-#pragma acc parallel loop present(X,l,Y) vector_length(32) 
+#pragma acc parallel loop  vector vector_length(10) async
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;
+  }
   }
 }
 
