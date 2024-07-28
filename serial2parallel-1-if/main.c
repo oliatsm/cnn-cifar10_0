@@ -5,14 +5,11 @@
 #include <string.h>
 // #include <time.h> 
 
-#include "layers_acc.h"
+#include "layers.h"
 #include "malloc2D.h"
 #include "timer.h"
 
-#ifndef NUM_IMAGES
-#define NUM_IMAGES 50000  // Number of Input Data
-#endif
-
+#define NUM_IMAGES 1200  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -108,7 +105,8 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("OpenACC Code\n");
+
+    printf("Parallel (if) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -119,7 +117,6 @@ int main() {
     cpu_timer_start(&t1);
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
-#pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
@@ -167,19 +164,13 @@ int main() {
     float* restrict O8 = malloc(sizeof(float) * L8->out_size);
     float* restrict O9 = malloc(sizeof(float) * L9->out_size);
     float* restrict O10 = malloc(sizeof(float) * L10->out_size);
-    
-    float** restrict output = malloc2D(NUM_IMAGES, L11->out_size);
-    // Create Network Data on Device
-#pragma acc enter data create(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-#pragma acc enter data create(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc enter data create(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc enter data create(O10[0:L10->out_size],output[0:NUM_IMAGES][0:L11->out_size])
-
-    t2 = cpu_timer_stop(t1);
+    float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
+     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
     printf("Create Ouputs time:%f seconds\n", t2);
-    
+
+
     //Net Forward
     cpu_timer_start(&t1);
     for (int i = 0; i < NUM_IMAGES; i++) {
@@ -219,22 +210,20 @@ int main() {
         cpu_timer_start(&t3);
         pool_forward(O8, L9, O9);
         time_pool3 += cpu_timer_stop(t3);
-    
+
         cpu_timer_start(&t3);
         fc_forward(O9, L10, O10);
         time_fc += cpu_timer_stop(t3);
 
         cpu_timer_start(&t3);
-        softmax_forward(O10, L11, output[i]);
+        softmax_forward(O10, L11, O11[i]);
         time_softmax += cpu_timer_stop(t3);
     }
 
-    // Copy results for Device to Host
-    #pragma acc update self(output[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
-    arr2txt_2(output,L11->in_width,L11->in_depth,"Outputs-acc.txt");    
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
@@ -264,11 +253,11 @@ int main() {
     int predictions[NUM_IMAGES];
     for (int n = 0; n < NUM_IMAGES; n++) {
         int class_o = 0;
-        float max_out = output[n][0];
+        float max_o = O11[n][0];
         for (int i = 1; i < L11->out_depth; i++) {
-            if (max_out < output[n][i]) {
+            if (max_o < O11[n][i]) {
                 class_o = i;
-                max_out = output[n][i];
+                max_o = O11[n][i];
             }
         }
         predictions[n] = class_o;
@@ -289,16 +278,9 @@ int main() {
     printf("Net Accuracy time:%f seconds\n", t2);
 
 
- // Free memory
+    // Free memory
     cpu_timer_start(&t1);
-
-#pragma acc exit data delete(O10[0:L10->out_size],output[0:NUM_IMAGES][0:L11->out_size])
-#pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-
-    free(output);
-    
+    free(O11);
     free(O10);
     free(O9);
     free(O8);
