@@ -257,7 +257,7 @@ int main() {
 
 	// arr2txt(input[NUM_IMAGES-1],L1->in_height,L1->in_depth,"L1-input.txt");
 	// arr2txt(L1->padded_input,L1->padded_height,L1->in_depth,"L1-padded-input.txt");
-	// arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
+	arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
 
 	printf("\n");
 	printf("Net Forward total time:%f seconds\n", (double)(t2 - t1) / CLOCKS_PER_SEC);
@@ -394,7 +394,7 @@ void arr2txt_2(float** arr, int N, int M, char* file_name) {
 		return;
 	}
 	fprintf(file, "%d,%d,%d\n", N, N, M);
-	for (int n = 0; n < NUM_IMAGES; n++) {
+	for (int n = 0; n < NUM_IMAGES; n+=1200) {
 		for (int k = 0; k < M; ++k) {
 			for (int j = 0; j < N; ++j) {
 				for (int i = 0; i < N; ++i) {

@@ -417,7 +417,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 
 	float max = -INFINITY;
 	float total = 0.0f;
-	#pragma acc data present(l,X,Y) create(max,total)//copyin(max,total) 
+	#pragma acc data present(l,X,Y) copyin(max,total)//copyin(max,total) 
 	{
 		// Compute max activation
 		#pragma acc parallel loop reduction(max:max)
