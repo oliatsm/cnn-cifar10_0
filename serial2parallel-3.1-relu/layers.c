@@ -58,8 +58,7 @@ void free_conv(Conv_Layer* l) {
 
 // Add zero-padding to input data of conv_layer l
 void pad_input(float* restrict X, Conv_Layer* l) {
-  int in_size = l->in_width * l->in_height * l->in_depth;
-#pragma acc parallel loop present(l,X) collapse(3) gang vector vector_length(32) async
+#pragma acc parallel loop present(l,X) collapse(3) gang vector vector_length(32) 
   for ( int c = 0; c < l->in_depth; c++) {
     for (int j = 0; j < l->in_height; j++) {
       for (int i = 0; i < l->in_width; i++) {
@@ -69,7 +68,6 @@ void pad_input(float* restrict X, Conv_Layer* l) {
       }
     }
   }
-  
 }
 
 
@@ -85,7 +83,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
-        #pragma acc loop  reduction(+:sum) vector
+        #pragma acc loop  reduction(+:sum) collapse(2) vector
           for (int c = 0; c < l->in_depth; c++) {
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -130,7 +128,7 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
-  #pragma acc parallel loop vector present(l,X,Y) //vector_length(32)
+  #pragma acc parallel loop present(l,X,Y) vector 
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
@@ -238,7 +236,7 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
-  #pragma acc parallel loop present(X,l,Y) gang worker vector_length(32) 
+  #pragma acc parallel loop present(X,l,Y) gang worker num_gangs(10) vector_length(32) // 
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
     float sum = 0.0f;
@@ -410,7 +408,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
-#pragma acc parallel loop  vector vector_length(10) async
+#pragma acc parallel loop vector vector_length(10) 
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;
   }
