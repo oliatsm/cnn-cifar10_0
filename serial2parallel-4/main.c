@@ -5,7 +5,7 @@
 #include <string.h>
 // #include <time.h> 
 
-#include "layers_serial.h"
+#include "layers.h"
 #include "malloc2D.h"
 #include "timer.h"
 
@@ -13,7 +13,7 @@
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
-#define MAX_TRAINING_DATA 1200 // Max number of training data
+#define MAX_TRAINING_DATA 50000 // Max number of training data
 #define MAX_BATCH_DATA 10000    // Max number of samples per batch    
 #define LINE_SIZE 3073  // Bytes of one line in the binary data files
 
@@ -105,7 +105,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Serial Code\n");
+    printf("Parallel Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -169,6 +169,12 @@ int main() {
 
     printf("Create Ouputs time:%f seconds\n", t2);
 
+#pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS]) 
+#pragma acc enter data create(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
+#pragma acc enter data create(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
+#pragma acc enter data create(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
+#pragma acc enter data create(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
+
 
     //Net Forward
     cpu_timer_start(&t1);
@@ -219,10 +225,17 @@ int main() {
         time_softmax += cpu_timer_stop(t3);
     }
 
+#pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS],O10[0:L10->out_size]) 
+#pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
+#pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
+#pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
+#pragma acc exit data copyout(O11[0:NUM_IMAGES][0:L11->out_size])
+
+
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
-    // arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs2.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);

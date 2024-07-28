@@ -81,18 +81,20 @@ typedef struct conv_layer {
     int stride;         // Stride
     int padding;        // Padding
 
+    int padded_height;  // Padding height
+    int padded_width;   // Padding width
+    int padded_size;    // Padding volume size
+    
     int out_width;      // Output width
     int out_height;     // Output height
     int out_depth;      // Output depth
 
     int out_size;       // Output volume size
-    int padded_width;
-    int padded_height;
-    int padded_size;
+    int weights_size;   //Weights volume size
 
     float* weights;     // Filter weights
     float* bias;        // Bias values
-    float* padded_input;    // Input with padding
+    float* in_padded;   // Padded input
 
 }Conv_Layer;
 
@@ -178,8 +180,6 @@ void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y);
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y);
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y);
 void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y);
-
-void add_padding(float* restrict X, Conv_Layer* l);
 
 // Functions to load pre-trained data for convolutional and fully connected layers
 int load_conv(Conv_Layer* l, char* file_name);

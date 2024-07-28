@@ -5,7 +5,7 @@
 #include <string.h>
 // #include <time.h> 
 
-#include "layers_serial.h"
+#include "layers.h"
 #include "malloc2D.h"
 #include "timer.h"
 
@@ -13,7 +13,7 @@
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
-#define MAX_TRAINING_DATA 1200 // Max number of training data
+#define MAX_TRAINING_DATA 50000 // Max number of training data
 #define MAX_BATCH_DATA 10000    // Max number of samples per batch    
 #define LINE_SIZE 3073  // Bytes of one line in the binary data files
 
@@ -105,7 +105,8 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Serial Code\n");
+
+    printf("Parallel (if) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -222,7 +223,7 @@ int main() {
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
-    // arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
