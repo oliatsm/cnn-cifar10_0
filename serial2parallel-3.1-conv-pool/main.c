@@ -173,9 +173,7 @@ int main() {
 #pragma acc enter data create(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
 #pragma acc enter data create(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
 #pragma acc enter data create(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc enter data create(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
-
-
+// #pragma acc enter data create(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
 
     //Net Forward
     cpu_timer_start(&t1);
@@ -237,10 +235,10 @@ int main() {
     }
 
 // !!! TEST !!!
-#pragma acc update self(O1[0:L1->out_size],O4[0:L4->out_size])
-    arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
-    arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
-    arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
+// #pragma acc update self(O1[0:L1->out_size],O4[0:L4->out_size])
+//     arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
+//     arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
+//     arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
 
 
 /// ^^ TEST
@@ -305,11 +303,13 @@ int main() {
 
     // Free memory
     cpu_timer_start(&t1);
-#pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-#pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc exit data delete(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
+// #pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
+// #pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
+// #pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
+// #pragma acc exit data delete(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
 
+#pragma acc exit data delete(O1[0:L1->out_size],O4[0:L4->out_size],O7[0:L7->out_size])
+#pragma acc exit data delete(O6[0:L6->out_size],O3[0:L3->out_size])
 
     free(O11);
     free(O10);

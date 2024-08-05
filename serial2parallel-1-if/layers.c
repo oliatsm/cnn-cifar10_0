@@ -29,8 +29,8 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
   // Allocate memory for weights and bias arrays
   layer->weights = malloc(sizeof(float) * K * K * M * D);
   layer->bias = malloc(sizeof(float) * M);
-  #pragma acc enter data copyin(layer[0:1])
-  #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
+  // #pragma acc enter data copyin(layer[0:1])
+  // #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
 
   return layer;
 }
@@ -38,8 +38,8 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 // Frees memory allocated for a convolutional layer.
 // l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer* l) {
-#pragma acc exit data delete(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
-#pragma acc exit data delete(l[0:1])
+// #pragma acc exit data delete(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
+// #pragma acc exit data delete(l[0:1])
   free(l->bias);
   free(l->weights);
   free(l);
@@ -48,17 +48,19 @@ void free_conv(Conv_Layer* l) {
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
-  int in_size = l->in_width*l->in_height*l->in_depth;
-
+  // int in_size = l->in_width*l->in_height*l->in_depth;
+  
     // For each output feature map
-  #pragma acc parallel loop copyin(X[0:in_size]) copyout(Y[0:l->out_size]) present(l) collapse(3) gang worker vector_length(32)
+  #pragma acc parallel loop 
     for (int m = 0; m < l->out_depth; m++) {
+      #pragma acc loop independent
       for (int j = 0; j < l->out_height; j++) {
+        #pragma acc loop independent
         for (int i = 0; i < l->out_width; i++) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
-          #pragma acc loop reduction(+:sum) collapse(3) vector
+          #pragma acc loop reduction(+:sum) //collapse(3) vector
           for (int c = 0; c < l->in_depth; c++) {
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -265,7 +267,7 @@ int load_conv(Conv_Layer* l, char* file_name) {
   }
 
   fclose(fin);
-  #pragma acc update device (l->weights[0:l->weights_size],l->bias[0:l->out_depth])
+  // #pragma acc update device (l->weights[0:l->weights_size],l->bias[0:l->out_depth])
   return 0;
 }
 

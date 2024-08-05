@@ -9,7 +9,7 @@
 #include "malloc2D.h"
 #include "timer.h"
 
-#define NUM_IMAGES 1200  // Number of Input Data
+#define NUM_IMAGES 50000  // Number of Input Data
 #define NUM_CLASSES 10  // Number of Classes, CIFAR-10
 #define IMAGE_PIXELS 3072 // Number of pixels of each image
 
@@ -222,7 +222,7 @@ int main() {
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
-    // arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
@@ -348,7 +348,7 @@ void arr2txt_2(float** arr, int N, int M, char* file_name) {
         return;
     }
     fprintf(file, "%d,%d,%d\n", N, N, M);
-    for (int n = 0; n < NUM_IMAGES; n++){
+    for (int n = 0; n < NUM_IMAGES; n+=1200){
     for (int k = 0; k < M; ++k) {
         for (int j = 0; j < N; ++j) {
             for (int i = 0; i < N; ++i) {
