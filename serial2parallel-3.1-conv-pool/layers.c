@@ -129,7 +129,7 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
-  #pragma acc parallel loop present(l,X,Y) //vector 
+  #pragma acc parallel loop present(l,X,Y) gang worker vector vector_length(32)
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
@@ -174,14 +174,15 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
   // For each output feature map
-  #pragma acc parallel loop present(X,l,Y) //collapse(3) gang worker vector_length(32) 
+  #pragma acc parallel loop present(X,l,Y) collapse(2) gang vector_length(32) 
   for (int m = 0; m < l->out_depth; m++) {
     for (int j = 0; j < l->out_height; j++) {
+      #pragma acc loop independent worker
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
         // Find Max in pooling filter
         float max = -INFINITY;
-        #pragma acc loop reduction(max:max) //vector
+        #pragma acc loop reduction(max:max) vector 
         for (int p_j = 0; p_j < l->pool_width; p_j++) {
           for (int p_i = 0; p_i < l->pool_width; p_i++) {
             int x_j = j * l->stride + p_j; // Input height index, increased by stride
@@ -227,8 +228,8 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
   layer->weights = (float*)malloc(sizeof(float) * layer->in_neurons * layer->out_depth);
   layer->bias = (float*)malloc(sizeof(float) * layer->out_depth);
 
-  // #pragma acc enter data copyin(layer[0:1])
-  // #pragma acc enter data create(layer->weights[0:layer->in_neurons * layer->out_depth],layer->bias[0:layer->out_depth])
+  #pragma acc enter data copyin(layer[0:1])
+  #pragma acc enter data create(layer->weights[0:layer->in_neurons * layer->out_depth],layer->bias[0:layer->out_depth])
 
   return layer;
 }
@@ -237,11 +238,11 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
-  // #pragma acc parallel loop present(X,l,Y) gang worker num_gangs(10) vector_length(32) // 
+  #pragma acc parallel loop present(X,l,Y) gang worker vector_length(32) 
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
     float sum = 0.0f;
-    // #pragma acc loop reduction(+:sum) vector
+    #pragma acc loop reduction(+:sum) vector
     for (int j = 0; j < l->in_neurons; j++) {
       int w_idx = j + i * l->in_neurons; // Weight index
       sum += X[j] * l->weights[w_idx];
@@ -254,8 +255,8 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
 // Frees memory allocated for a fully connected layer.
 // l: Pointer to the fully connected layer to be freed.
 void free_fc(FC_Layer* l) {
-  // #pragma acc exit data delete(l->bias[0:l->out_depth],l->weights[0:l->in_neurons * l->out_depth])
-  // #pragma acc exit data delete(l)
+  #pragma acc exit data delete(l->bias[0:l->out_depth],l->weights[0:l->in_neurons * l->out_depth])
+  #pragma acc exit data delete(l)
 
   free(l->bias);
   free(l->weights);
@@ -352,7 +353,7 @@ int load_fc(FC_Layer* l, const char* filename) {
   }
 
   fclose(fin);
-// #pragma acc update device (l->weights[0:l->out_depth*l->in_neurons],l->bias[0:l->out_depth])
+#pragma acc update device (l->weights[0:l->out_depth*l->in_neurons],l->bias[0:l->out_depth])
 
   return 0;
 }
@@ -377,8 +378,8 @@ Softmax_Layer* make_softmax_layer(int W, int H, int D) {
 
   layer->likelihoods = (float*)malloc(sizeof(float) * layer->out_depth);
 
-  // #pragma acc enter data copyin(layer[0:1])
-  // #pragma acc enter data create(layer->likelihoods[0:layer->out_depth])
+  #pragma acc enter data copyin(layer[0:1])
+  #pragma acc enter data create(layer->likelihoods[0:layer->out_depth])
 
   return layer;
 }
@@ -389,10 +390,10 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   
   float max = -INFINITY;
   float total = 0.0f;
-  // #pragma acc data copyin(max,total) present(X,l,Y)
-  // {
+  #pragma acc data copyin(max,total) present(X,l,Y)
+  {
     // Compute max activation
-  // #pragma acc parallel loop reduction(max:max) vector vector_length(10)
+  #pragma acc parallel loop reduction(max:max) vector vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
       max = X[i];
@@ -401,7 +402,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 
   // Compute exponentials and total
   
-// #pragma acc parallel loop reduction(+:total) vector vector_length(10)
+#pragma acc parallel loop reduction(+:total) vector vector_length(10)
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
@@ -409,11 +410,11 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
-// #pragma acc parallel loop vector vector_length(10) 
+#pragma acc parallel loop vector vector_length(10) 
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;
   }
-  // } // acc data
+  } // acc data
 }
 
 // Frees memory allocated for a softmax layer.
