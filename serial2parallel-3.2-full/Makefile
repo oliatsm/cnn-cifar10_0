@@ -1,5 +1,5 @@
 CC = nvc
-CFLAGS = -acc -Minfo=all -c11 -Wall -Wextra -march=native #-gpu=managed
+CFLAGS = -acc=multicore -Minfo=all -c11 -Wall -Wextra -march=native #-gpu=managed
 PROFILE_FLAGS = -pg
 DEBUG_FLAGS = -g
 

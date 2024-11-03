@@ -51,7 +51,9 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
   // int in_size = l->in_width*l->in_height*l->in_depth;
   
     // For each output feature map
-  #pragma acc parallel loop 
+  #pragma acc kernels 
+  {
+    #pragma acc loop independent
     for (int m = 0; m < l->out_depth; m++) {
       #pragma acc loop independent
       for (int j = 0; j < l->out_height; j++) {
@@ -80,6 +82,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
         } // for i
       } // for j
     } // for m
+  }
 }
 
 // Creates a ReLU activation layer.
