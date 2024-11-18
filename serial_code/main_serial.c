@@ -221,8 +221,6 @@ int main() {
 
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
-
-    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
@@ -275,7 +273,6 @@ int main() {
     ttotal += t2;
 
     printf("Net Accuracy time:%f seconds\n", t2);
-
 
     // Free memory
     cpu_timer_start(&t1);

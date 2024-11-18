@@ -222,8 +222,6 @@ int main() {
 
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
-
-    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);

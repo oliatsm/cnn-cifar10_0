@@ -29,8 +29,6 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
   // Allocate memory for weights and bias arrays
   layer->weights = malloc(sizeof(float) * K * K * M * D);
   layer->bias = malloc(sizeof(float) * M);
-  // #pragma acc enter data copyin(layer[0:1])
-  // #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
 
   return layer;
 }
@@ -38,8 +36,6 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 // Frees memory allocated for a convolutional layer.
 // l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer* l) {
-// #pragma acc exit data delete(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
-// #pragma acc exit data delete(l[0:1])
   free(l->bias);
   free(l->weights);
   free(l);
@@ -53,25 +49,22 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
     // For each output feature map
   #pragma acc kernels 
   {
-    #pragma acc loop independent
     for (int m = 0; m < l->out_depth; m++) {
-      #pragma acc loop independent
       for (int j = 0; j < l->out_height; j++) {
-        #pragma acc loop independent
         for (int i = 0; i < l->out_width; i++) {
-          int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
+          int y_idx = i + (l->out_width * (j + m * l->out_height)); 
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
-          #pragma acc loop reduction(+:sum) //collapse(3) vector
+          #pragma acc loop reduction(+:sum) 
           for (int c = 0; c < l->in_depth; c++) {
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
-                int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); // Filter Index
-                int x_j = -l->padding + j * l->stride + f_j; // Input height index, increased by stride
-                int x_i = -l->padding + i * l->stride + f_i; // Input width index, increased by stride
+                int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); 
+                int x_j = -l->padding + j * l->stride + f_j; 
+                int x_i = -l->padding + i * l->stride + f_i; 
                 // If in range of image, else zero
                 if (x_j >= 0 && x_i >= 0 && x_j < l->in_height && x_i < l->in_width) {
-                  int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i; // Input index
+                  int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i;
                   sum += l->weights[f_idx] * X[x_idx];
                 } // if
               } // for f_i
