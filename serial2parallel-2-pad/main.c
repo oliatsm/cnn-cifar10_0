@@ -116,7 +116,6 @@ int main() {
     cpu_timer_start(&t1);
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
-#pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
@@ -170,12 +169,6 @@ int main() {
 
     printf("Create Ouputs time:%f seconds\n", t2);
 
-#pragma acc enter data create(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-#pragma acc enter data create(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc enter data create(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc enter data create(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
-
-
 
     //Net Forward
     cpu_timer_start(&t1);
@@ -184,71 +177,51 @@ int main() {
         cpu_timer_start(&t3);
         conv_forward(input[i], L1, O1);
         time_conv1 += cpu_timer_stop(t3);
-#pragma acc update self(O1[0:L1->out_size])
-// #pragma acc update device(O1[0:L1->out_size])
+
         cpu_timer_start(&t3);
         relu_forward(O1, L2, O2);
         time_relu1 += cpu_timer_stop(t3);
-// #pragma acc update self(O2[0:L2->out_size])
 
         cpu_timer_start(&t3);
         pool_forward(O2, L3, O3);
         time_pool1 += cpu_timer_stop(t3);
-#pragma acc update device(O3[0:L3->out_size])
 
         cpu_timer_start(&t3);
         conv_forward(O3, L4, O4);
         time_conv2 += cpu_timer_stop(t3);
-#pragma acc update self(O4[0:L4->out_size])
-// #pragma acc update device(O4[0:L4->out_size])
+
         cpu_timer_start(&t3);
         relu_forward(O4, L5, O5);
         time_relu2 += cpu_timer_stop(t3);
-// #pragma acc update self(O5[0:L5->out_size])
 
         cpu_timer_start(&t3);
         pool_forward(O5, L6, O6);
         time_pool2 += cpu_timer_stop(t3);
-#pragma acc update device(O6[0:L6->out_size])
 
         cpu_timer_start(&t3);
         conv_forward(O6, L7, O7);
         time_conv3 += cpu_timer_stop(t3);
-#pragma acc update self(O7[0:L7->out_size])
-// #pragma acc update device(O7[0:L7->out_size])
+
         cpu_timer_start(&t3);
         relu_forward(O7, L8, O8);
         time_relu3 += cpu_timer_stop(t3);
-// #pragma acc update self(O8[0:L8->out_size])
 
         cpu_timer_start(&t3);
         pool_forward(O8, L9, O9);
         time_pool3 += cpu_timer_stop(t3);
-// #pragma acc update self(O9[0:L9->out_size])
 
         cpu_timer_start(&t3);
         fc_forward(O9, L10, O10);
         time_fc += cpu_timer_stop(t3);
-// #pragma acc update self(O10[0:L10->out_size])
 
         cpu_timer_start(&t3);
         softmax_forward(O10, L11, O11[i]);
         time_softmax += cpu_timer_stop(t3);
     }
 
-// !!! TEST !!!
-#pragma acc update self(O1[0:L1->out_size],O4[0:L4->out_size])
-    arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
-    arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
-    arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
 
-
-/// ^^ TEST
-// #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
-
-    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
@@ -305,11 +278,6 @@ int main() {
 
     // Free memory
     cpu_timer_start(&t1);
-#pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-#pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc exit data delete(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
-
 
     free(O11);
     free(O10);
@@ -338,7 +306,6 @@ int main() {
     free_relu(L2);
     free_conv(L1);
 
-#pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     free(input);
     t2 = cpu_timer_stop(t1);
     ttotal += t2;

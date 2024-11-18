@@ -169,6 +169,7 @@ int main() {
 
     printf("Create Ouputs time:%f seconds\n", t2);
 
+
     //Net Forward
     cpu_timer_start(&t1);
     for (int i = 0; i < NUM_IMAGES; i++) {
@@ -201,7 +202,6 @@ int main() {
         conv_forward(O6, L7, O7);
         time_conv3 += cpu_timer_stop(t3);
 
-
         cpu_timer_start(&t3);
         relu_forward(O7, L8, O8);
         time_relu3 += cpu_timer_stop(t3);
@@ -219,18 +219,9 @@ int main() {
         time_softmax += cpu_timer_stop(t3);
     }
 
-// !!! TEST !!!
-    arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
-    arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
-    arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
 
-
-/// ^^ TEST
-// #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
-
-    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);

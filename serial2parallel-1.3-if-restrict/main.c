@@ -105,6 +105,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
+
     printf("Parallel (if) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
@@ -112,7 +113,7 @@ int main() {
     int labels[NUM_IMAGES];
 
     // Input: Image Data
-    float** restrict input = malloc2D(NUM_IMAGES, IMAGE_PIXELS);
+    float** input = malloc2D(NUM_IMAGES, IMAGE_PIXELS);
     cpu_timer_start(&t1);
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
@@ -153,17 +154,17 @@ int main() {
     //Allocate Outputs
     cpu_timer_start(&t1);
 
-    float* restrict O1 = malloc(sizeof(float) * L1->out_size);
-    float* restrict O2 = malloc(sizeof(float) * L2->out_size);
-    float* restrict O3 = malloc(sizeof(float) * L3->out_size);
-    float* restrict O4 = malloc(sizeof(float) * L4->out_size);
-    float* restrict O5 = malloc(sizeof(float) * L5->out_size);
-    float* restrict O6 = malloc(sizeof(float) * L6->out_size);
-    float* restrict O7 = malloc(sizeof(float) * L7->out_size);
-    float* restrict O8 = malloc(sizeof(float) * L8->out_size);
-    float* restrict O9 = malloc(sizeof(float) * L9->out_size);
-    float* restrict O10 = malloc(sizeof(float) * L10->out_size);
-    float** restrict O11 = malloc2D(NUM_IMAGES, L11->out_size);
+    float* O1 = malloc(sizeof(float) * L1->out_size);
+    float* O2 = malloc(sizeof(float) * L2->out_size);
+    float* O3 = malloc(sizeof(float) * L3->out_size);
+    float* O4 = malloc(sizeof(float) * L4->out_size);
+    float* O5 = malloc(sizeof(float) * L5->out_size);
+    float* O6 = malloc(sizeof(float) * L6->out_size);
+    float* O7 = malloc(sizeof(float) * L7->out_size);
+    float* O8 = malloc(sizeof(float) * L8->out_size);
+    float* O9 = malloc(sizeof(float) * L9->out_size);
+    float* O10 = malloc(sizeof(float) * L10->out_size);
+    float** O11 = malloc2D(NUM_IMAGES, L11->out_size);
      t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
@@ -219,9 +220,10 @@ int main() {
         time_softmax += cpu_timer_stop(t3);
     }
 
-
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
+
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
@@ -278,7 +280,6 @@ int main() {
 
     // Free memory
     cpu_timer_start(&t1);
-
     free(O11);
     free(O10);
     free(O9);
