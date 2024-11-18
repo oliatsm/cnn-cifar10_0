@@ -44,7 +44,6 @@ void free_conv(Conv_Layer* l) {
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
-  // int in_size = l->in_width*l->in_height*l->in_depth;
   
     // For each output feature map
   #pragma acc kernels 
@@ -75,7 +74,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
         } // for i
       } // for j
     } // for m
-  }
+  }// acc kernels
 }
 
 // Creates a ReLU activation layer.
@@ -263,7 +262,6 @@ int load_conv(Conv_Layer* l, char* file_name) {
   }
 
   fclose(fin);
-  // #pragma acc update device (l->weights[0:l->weights_size],l->bias[0:l->out_depth])
   return 0;
 }
 

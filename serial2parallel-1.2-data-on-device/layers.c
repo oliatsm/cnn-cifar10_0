@@ -59,7 +59,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
       for (int j = 0; j < l->out_height; j++) {
         #pragma acc loop 
         for (int i = 0; i < l->out_width; i++) {
-          int y_idx = i + (l->out_width * (j + m * l->out_height)); // Output index
+          int y_idx = i + (l->out_width * (j + m * l->out_height)); 
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
           #pragma acc loop reduction(+:sum) 
