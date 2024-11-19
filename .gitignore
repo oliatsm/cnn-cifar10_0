@@ -29,3 +29,4 @@ serial_code-p/
 acc_code/*.nsys-rep
 acc_code/cnn-cifar10-acc
 serial_code-2/
+*.qdstrm

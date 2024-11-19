@@ -105,7 +105,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Parallel (if    ) Code\n");
+    printf("Parallel (if) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -224,7 +224,7 @@ int main() {
     ttotal += t2;
     
     printf("\n");
-    printf("Net Forward total time:%f seconds\n", t2);
+    printf("Net Forward total time: %f seconds\n", t2);
 
     printf("    Time for conv1: %f seconds\n", time_conv1);
     printf("    Time for relu1: %f seconds\n", time_relu1);
@@ -242,7 +242,7 @@ int main() {
     printf("  Conv: %f seconds\n",time_conv1+time_conv2+time_conv3);
     printf("  ReLU: %f seconds\n",time_relu1+time_relu2+time_relu3);
     printf("  Pool: %f seconds\n",time_pool1+time_pool2+time_pool3);
-    printf("  FC:   %f seconds\n", time_fc);
+    printf("    FC: %f seconds\n", time_fc);
     printf("  Softmax: %f seconds\n", time_softmax);
     printf("\n");
 
