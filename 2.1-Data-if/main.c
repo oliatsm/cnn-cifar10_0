@@ -105,7 +105,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Parallel (if) Code\n");
+    printf("Parallel (if    ) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
