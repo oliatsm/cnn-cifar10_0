@@ -298,6 +298,7 @@ int load_conv(Conv_Layer* l, char* file_name) {
   fclose(fin);
 
   #pragma acc update device(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
+  
   return 0;
 }
 

@@ -35,12 +35,20 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
   layer->bias = malloc(sizeof(float) * M);
   layer->in_padded = calloc(layer->padded_size, sizeof(float));
 
+  #pragma acc enter data copyin(layer[0:1])
+  #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
+  #pragma acc enter data copyin(layer->in_padded[0:layer->padded_size])
+
   return layer;
 }
 
 // Frees memory allocated for a convolutional layer.
 // l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer* l) {
+
+#pragma acc exit data delete(l->in_padded[0:l->padded_size])
+#pragma acc exit data delete(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
+#pragma acc exit data delete(l[0:1])
 
   free(l->in_padded);
   free(l->bias);
@@ -50,7 +58,7 @@ void free_conv(Conv_Layer* l) {
 
 // Add zero-padding to input data of conv_layer l
 void pad_input(float* restrict X, Conv_Layer* l) {
-#pragma acc parallel loop 
+#pragma acc parallel loop present(l,X)
   for ( int c = 0; c < l->in_depth; c++) {
     #pragma acc loop
     for (int j = 0; j < l->in_height; j++) {
@@ -70,6 +78,8 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 
   int in_size = l->in_width*l->in_height*l->in_depth;
+  #pragma acc data copyin(X[0:in_size]) present(l) copyout(Y[0:l->out_size])
+  {
     pad_input(X, l); //Create input with zero-padding
    // For each output feature map
 #pragma acc parallel loop  
@@ -98,6 +108,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
         } // for i
       } // for j
     } // for m
+  }//acc data
 }
 
 // Creates a ReLU activation layer.
@@ -285,6 +296,9 @@ int load_conv(Conv_Layer* l, char* file_name) {
   }
 
   fclose(fin);
+
+  #pragma acc update device(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
+  
   return 0;
 }
 
