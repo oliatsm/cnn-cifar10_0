@@ -75,14 +75,11 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
-void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
+void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y){
 
-  int in_size = l->in_width*l->in_height*l->in_depth;
-#pragma acc data copyin(X[0:in_size]) present(l) copyout(Y[0:l->out_size])
-{
     pad_input(X, l); //Create input with zero-padding
    // For each output feature map
-#pragma acc parallel loop  
+#pragma acc parallel loop present(l,X,Y) 
     for ( int m = 0; m < l->out_depth; m++) {
       #pragma acc loop
       for (int j = 0; j < l->out_height; j++) {
@@ -108,7 +105,6 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
         } // for i
       } // for j
     } // for m
-  }//acc data
 }
 
 // Creates a ReLU activation layer.

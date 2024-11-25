@@ -75,14 +75,14 @@ void pad_input(float* restrict X, Conv_Layer* l) {
 
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
-void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
+void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y){
 
   int in_size = l->in_width*l->in_height*l->in_depth;
 #pragma acc data copyin(X[0:in_size]) present(l) copyout(Y[0:l->out_size])
 {
     pad_input(X, l); //Create input with zero-padding
    // For each output feature map
-#pragma acc parallel loop  
+#pragma acc parallel loop gang 
     for ( int m = 0; m < l->out_depth; m++) {
       #pragma acc loop
       for (int j = 0; j < l->out_height; j++) {
@@ -91,7 +91,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); 
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
-        #pragma acc loop  reduction(+:sum) 
+        #pragma acc loop reduction(+:sum) vector
           for (int c = 0; c < l->in_depth; c++) {
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
