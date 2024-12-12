@@ -34,7 +34,7 @@ int load_data(float** image, int* label, int N) {
 
     //Loading the whole batches. If we need less than 10.000 images, the condition (b<batches) ends the loop.
     for (int b = 1; b < batches; b++) {
-        printf("Loading input batch %d...\n", b);
+        // printf("Loading input batch %d...\n", b);
 
         sprintf(file_name, "%s/data_batch_%d.bin", DATA_FOLDER, b);
 
@@ -63,7 +63,7 @@ int load_data(float** image, int* label, int N) {
 
     // Loading less than 10.000 images from a batch
     if (samples != 0) {
-        printf("Loading input batch %d...\n", batches);
+        // printf("Loading input batch %d...\n", batches);
 
         sprintf(file_name, "%s/data_batch_%d.bin", DATA_FOLDER, batches);
 
@@ -219,10 +219,19 @@ int main() {
         time_softmax += cpu_timer_stop(t3);
     }
 
+// !!! TEST !!!
+// #pragma acc update self(O1[0:L1->out_size],O4[0:L4->out_size])
+    arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
+    arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
+    arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
 
+
+/// ^^ TEST
+// #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
-    
+
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");        
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);
 
