@@ -227,9 +227,19 @@ int main() {
         time_softmax += cpu_timer_stop(t3);
     }
 
+// !!! TEST !!!
+#pragma acc update self(O1[0:L1->out_size],O2[0:L2->out_size],O4[0:L4->out_size])
+    arr2txt(O1,L1->in_width,L1->in_depth,"L1-test.txt");
+    arr2txt(O2,L2->in_width,L2->in_depth,"L2-test.txt");
+    arr2txt(O4,L4->in_width,L4->in_depth,"L4-test.txt");    
 
+
+/// ^^ TEST
+// #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
+
+    arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");    
     
     printf("\n");
     printf("Net Forward total time:%f seconds\n", t2);

@@ -58,11 +58,11 @@ void free_conv(Conv_Layer* l) {
 
 // Add zero-padding to input data of conv_layer l
 void pad_input(float* restrict X, Conv_Layer* l) {
-#pragma acc parallel loop present(X,l)
+#pragma acc parallel loop present(X,l) gang worker vector collapse(3)
   for ( int c = 0; c < l->in_depth; c++) {
-    #pragma acc loop
+    // #pragma acc loop
     for (int j = 0; j < l->in_height; j++) {
-      #pragma acc loop
+      // #pragma acc loop vector
       for (int i = 0; i < l->in_width; i++) {
         int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
         int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
@@ -82,16 +82,16 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 // {
     pad_input(X, l); //Create input with zero-padding
    // For each output feature map
-#pragma acc parallel loop  present(X,l,Y)
+#pragma acc parallel loop present(X,l,Y) gang worker collapse(3) vector_length(32)
     for ( int m = 0; m < l->out_depth; m++) {
-      #pragma acc loop
+      // #pragma acc loop worker
       for (int j = 0; j < l->out_height; j++) {
-       #pragma acc loop
+      //  #pragma acc loop
         for (int i = 0; i < l->out_width; i++) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); 
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
-        #pragma acc loop  reduction(+:sum) 
+        #pragma acc loop  reduction(+:sum) vector 
           for (int c = 0; c < l->in_depth; c++) {
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
@@ -137,7 +137,7 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
-#pragma acc parallel loop present(X,l,Y)
+#pragma acc parallel loop present(X,l,Y) gang vector vector_length(32)
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
@@ -181,16 +181,16 @@ Pool_Layer* make_pool_layer(int W, int H, int D, int K, int S) {
 // X: Input data, l: Pooling layer, Y: Output data
 void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
   // For each output feature map
-  #pragma acc parallel loop present(X,l,Y)
+  #pragma acc parallel loop present(X,l,Y) gang worker collapse(3) vector_length(32)
   for (int m = 0; m < l->out_depth; m++) {
-    #pragma acc loop
+    // #pragma acc loop worker
     for (int j = 0; j < l->out_height; j++) {
-      #pragma acc loop
+      // #pragma acc loop
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
         // Find Max in pooling filter
         float max = -INFINITY;
-        #pragma acc loop reduction(max:max)
+        #pragma acc loop reduction(max:max) collapse(2) vector
         for (int p_j = 0; p_j < l->pool_width; p_j++) {
           for (int p_i = 0; p_i < l->pool_width; p_i++) {
             int x_j = j * l->stride + p_j; // Input height index, increased by stride
