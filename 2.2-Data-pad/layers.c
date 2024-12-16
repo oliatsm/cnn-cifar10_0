@@ -58,11 +58,9 @@ void free_conv(Conv_Layer* l) {
 
 // Add zero-padding to input data of conv_layer l
 void pad_input(float* restrict X, Conv_Layer* l) {
-#pragma acc parallel loop present(X,l)
+#pragma acc parallel loop present(X,l) gang vector collapse(3)// vector_length(32)
   for ( int c = 0; c < l->in_depth; c++) {
-    #pragma acc loop
     for (int j = 0; j < l->in_height; j++) {
-      #pragma acc loop
       for (int i = 0; i < l->in_width; i++) {
         int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
         int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
@@ -85,7 +83,6 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
 #pragma acc parallel loop gang collapse(3) vector_length(32)
     for ( int m = 0; m < l->out_depth; m++) {
       for (int j = 0; j < l->out_height; j++) {
-        // #pragma acc loop worker 
         for (int i = 0; i < l->out_width; i++) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); 
           // Calculate dot product of Weights*Input
