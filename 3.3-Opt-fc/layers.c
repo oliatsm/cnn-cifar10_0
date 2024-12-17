@@ -242,11 +242,11 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
-  #pragma acc parallel loop present(X,l,Y)
+  #pragma acc parallel loop present(X,l,Y) gang //vector_length(128) 
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
     float sum = 0.0f;
-    #pragma acc loop reduction(+:sum)
+    #pragma acc loop reduction(+:sum) vector
     for (int j = 0; j < l->in_neurons; j++) {
       int w_idx = j + i * l->in_neurons; // Weight index
       sum += X[j] * l->weights[w_idx];

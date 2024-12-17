@@ -10,6 +10,8 @@
         "string_view": "c",
         "ranges": "c",
         "iosfwd": "c",
-        "iterator": "c"
+        "iterator": "c",
+        "semaphore": "c",
+        "ratio": "c"
     }
 }
