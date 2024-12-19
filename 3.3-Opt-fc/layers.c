@@ -179,14 +179,12 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
   // For each output feature map
   #pragma acc parallel loop present(X,l,Y) gang collapse(3) vector_length(32)
   for (int m = 0; m < l->out_depth; m++) {
-    // #pragma acc loop
     for (int j = 0; j < l->out_height; j++) {
-      // #pragma acc loop
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
         // Find Max in pooling filter
         float max = -INFINITY;
-        #pragma acc loop reduction(max:max) vector //collapse(2)
+        #pragma acc loop reduction(max:max) vector 
         for (int p_j = 0; p_j < l->pool_width; p_j++) {
           for (int p_i = 0; p_i < l->pool_width; p_i++) {
             int x_j = j * l->stride + p_j; // Input height index, increased by stride
@@ -242,7 +240,7 @@ FC_Layer* make_fc_layer(int W, int H, int D, int num_neurons) {
 // X: Input data, l: Fully connected layer, Y: Output data
 void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
   // For every output neuron
-  #pragma acc parallel loop present(X,l,Y) gang //vector_length(128) 
+  #pragma acc parallel loop present(X,l,Y) gang vector_length(128) 
   for (int i = 0; i < l->out_depth; i++) {
     // Calculate dot product of input and weights
     float sum = 0.0f;
@@ -399,7 +397,6 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   #pragma acc kernels 
   {
     // Compute max activation
-    // #pragma acc parallel loop reduction(max:max) // vector_length(32)
     #pragma acc loop reduction(max:max) gang(1) vector(32)
   for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
@@ -408,7 +405,6 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Compute exponentials and total
-  // #pragma acc parallel loop reduction(+:total) // vector_length(32)
       #pragma acc loop reduction(+:total) gang(1) vector(32)
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
@@ -417,7 +413,6 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
-  // #pragma acc parallel loop // vector_length(32)
   #pragma acc loop gang(1) vector(32)
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;

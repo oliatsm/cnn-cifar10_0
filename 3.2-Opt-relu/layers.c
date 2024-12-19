@@ -132,7 +132,7 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
-  #pragma acc parallel loop present(l,X,Y) gang vector //vector_length(128)
+  #pragma acc parallel loop present(l,X,Y) gang vector //vector_length(32)
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
   }
@@ -179,14 +179,12 @@ void pool_forward(float* restrict X, Pool_Layer* l, float* restrict Y) {
   // For each output feature map
   #pragma acc parallel loop present(X,l,Y) gang collapse(3) vector_length(32)
   for (int m = 0; m < l->out_depth; m++) {
-    // #pragma acc loop
     for (int j = 0; j < l->out_height; j++) {
-      // #pragma acc loop
       for (int i = 0; i < l->out_width; i++) {
         int y_idx = i + l->out_width * (j + m * l->out_height); // Output index
         // Find Max in pooling filter
         float max = -INFINITY;
-        #pragma acc loop reduction(max:max) vector //collapse(2)
+        #pragma acc loop reduction(max:max) vector 
         for (int p_j = 0; p_j < l->pool_width; p_j++) {
           for (int p_i = 0; p_i < l->pool_width; p_i++) {
             int x_j = j * l->stride + p_j; // Input height index, increased by stride
