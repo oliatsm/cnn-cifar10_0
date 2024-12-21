@@ -132,9 +132,13 @@ ReLU_Layer* make_relu_layer(int W, int H, int D) {
 // Performs the forward pass for a ReLU activation layer.
 // X: Input data, l: ReLU layer, Y: Output data
 void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
-  #pragma acc parallel loop present(l,X,Y) gang vector //vector_length(32)
+  // #pragma acc parallel loop present(l,X,Y) gang vector //vector_length(32)
+  #pragma acc kernels present(l,X,Y) 
+  {
+    #pragma acc loop gang worker vector(32)
   for (int i = 0; i < l->out_size; i++) {
     Y[i] = (X[i] < 0.0f) ? 0.0f : X[i];
+  }
   }
 }
 
