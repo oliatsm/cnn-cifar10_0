@@ -400,12 +400,12 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   
   float max = -INFINITY;
   float total = 0.0f;
-  // #pragma acc data copyin(max,total) present(X,l,Y)
-  // {
-  // #pragma acc kernels 
-  // {
+  #pragma acc data copyin(max,total) present(X,l,Y)
+  {
+  #pragma acc kernels 
+  {
     // Compute max activation
-    // #pragma acc loop reduction(max:max) gang(1) vector(32)
+    #pragma acc loop reduction(max:max) gang(1) vector(32)
   for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
       max = X[i];
@@ -413,7 +413,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Compute exponentials and total
-// #pragma acc loop reduction(+:total) gang(1) vector(32)
+#pragma acc loop reduction(+:total) gang(1) vector(32)
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
@@ -421,12 +421,12 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Normalize and output to sum to one
-  // #pragma acc loop gang(1) vector(32)
+  #pragma acc loop gang(1) vector(32)
   for (int i = 0; i < l->out_depth; i++) {
     Y[i] = l->likelihoods[i] / total;
   }
-  // }//acc kernels
-  // }// acc data
+  }//acc kernels
+  }// acc data
 }
 
 // Frees memory allocated for a softmax layer.

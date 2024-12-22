@@ -220,7 +220,6 @@ int main() {
         cpu_timer_start(&t3);
         fc_forward(O9, L10, O10);
         time_fc += cpu_timer_stop(t3);
-#pragma acc update self(O10[0:L10->out_size])
 
         cpu_timer_start(&t3);
         softmax_forward(O10, L11, O11[i]);
@@ -235,7 +234,7 @@ int main() {
 
 
 /// ^^ TEST
-// #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
+#pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
 
