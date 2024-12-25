@@ -34,7 +34,7 @@ int load_data(float** image, int* label, int N) {
 
     //Loading the whole batches. If we need less than 10.000 images, the condition (b<batches) ends the loop.
     for (int b = 1; b < batches; b++) {
-        // printf("Loading input batch %d...\n", b);
+        printf("Loading input batch %d...\n", b);
 
         sprintf(file_name, "%s/data_batch_%d.bin", DATA_FOLDER, b);
 
@@ -105,7 +105,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Parallel (pad) Code\n");
+    printf("Parallel (if) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -116,7 +116,6 @@ int main() {
     cpu_timer_start(&t1);
     // Load Image Data 
     load_data(input, labels, NUM_IMAGES);
-#pragma acc enter data copyin(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
 
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
@@ -170,12 +169,6 @@ int main() {
 
     printf("Create Ouputs time:%f seconds\n", t2);
 
-#pragma acc enter data create(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-#pragma acc enter data create(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc enter data create(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc enter data create(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
-
-
 
     //Net Forward
     cpu_timer_start(&t1);
@@ -217,7 +210,6 @@ int main() {
         pool_forward(O8, L9, O9);
         time_pool3 += cpu_timer_stop(t3);
 
-#pragma acc update self(O9[0:L9->out_size])
         cpu_timer_start(&t3);
         fc_forward(O9, L10, O10);
         time_fc += cpu_timer_stop(t3);
@@ -232,7 +224,7 @@ int main() {
     ttotal += t2;
     
     printf("\n");
-    printf("Net Forward total time:%f seconds\n", t2);
+    printf("Net Forward total time: %f seconds\n", t2);
 
     printf("    Time for conv1: %f seconds\n", time_conv1);
     printf("    Time for relu1: %f seconds\n", time_relu1);
@@ -250,7 +242,7 @@ int main() {
     printf("  Conv: %f seconds\n",time_conv1+time_conv2+time_conv3);
     printf("  ReLU: %f seconds\n",time_relu1+time_relu2+time_relu3);
     printf("  Pool: %f seconds\n",time_pool1+time_pool2+time_pool3);
-    printf("  FC:   %f seconds\n", time_fc);
+    printf("    FC: %f seconds\n", time_fc);
     printf("  Softmax: %f seconds\n", time_softmax);
     printf("\n");
 
@@ -286,11 +278,6 @@ int main() {
 
     // Free memory
     cpu_timer_start(&t1);
-#pragma acc exit data delete(O1[0:L1->out_size],O2[0:L2->out_size],O3[0:L3->out_size])
-#pragma acc exit data delete(O4[0:L4->out_size],O5[0:L5->out_size],O6[0:L6->out_size])
-#pragma acc exit data delete(O7[0:L7->out_size],O8[0:L8->out_size],O9[0:L9->out_size])
-#pragma acc exit data delete(O10[0:L10->out_size],O11[0:NUM_IMAGES][0:L11->out_size])
-
 
     free(O11);
     free(O10);
@@ -319,7 +306,6 @@ int main() {
     free_relu(L2);
     free_conv(L1);
 
-#pragma acc exit data delete(input[0:NUM_IMAGES][0:IMAGE_PIXELS])
     free(input);
     t2 = cpu_timer_stop(t1);
     ttotal += t2;

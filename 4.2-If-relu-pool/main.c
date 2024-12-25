@@ -105,7 +105,7 @@ int main() {
     double time_conv2 = 0, time_relu2 = 0, time_pool2 = 0;
     double time_conv3 = 0, time_relu3 = 0, time_pool3 = 0;
     double time_fc = 0, time_softmax = 0;
-    printf("Parallel (pad) Code\n");
+    printf("Parallel (if) Code\n");
     printf("CNN for %d images\n", NUM_IMAGES);
 
     // Image labels 
@@ -180,7 +180,7 @@ int main() {
     //Net Forward
     cpu_timer_start(&t1);
     for (int i = 0; i < NUM_IMAGES; i++) {
-    
+
         cpu_timer_start(&t3);
         conv_forward(input[i], L1, O1);
         time_conv1 += cpu_timer_stop(t3);
@@ -238,7 +238,7 @@ int main() {
 // #pragma acc update self(O11[0:NUM_IMAGES][0:L11->out_size])
     t2 = cpu_timer_stop(t1);
     ttotal += t2;
-
+    
     arr2txt_2(O11,L11->in_width,L11->in_depth,"Outputs.txt");        
     printf("\n");
     printf("Net Forward total time: %f seconds\n", t2);
@@ -259,7 +259,7 @@ int main() {
     printf("  Conv: %f seconds\n",time_conv1+time_conv2+time_conv3);
     printf("  ReLU: %f seconds\n",time_relu1+time_relu2+time_relu3);
     printf("  Pool: %f seconds\n",time_pool1+time_pool2+time_pool3);
-    printf("  FC:   %f seconds\n", time_fc);
+    printf("    FC: %f seconds\n", time_fc);
     printf("  Softmax: %f seconds\n", time_softmax);
     printf("\n");
 

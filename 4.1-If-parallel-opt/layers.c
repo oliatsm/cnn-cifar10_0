@@ -26,18 +26,11 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 
   layer->out_size = layer->out_width * layer->out_height * layer->out_depth;
 
-  layer->padded_width = W + 2 * P;
-  layer->padded_height = H + 2 * P;
-  layer->padded_size = layer->padded_height * layer->padded_width * D;
-
   // Allocate memory for weights and bias arrays
-  layer->weights = malloc(sizeof(float) * layer->weights_size);
+  layer->weights = malloc(sizeof(float) * K * K * M * D);
   layer->bias = malloc(sizeof(float) * M);
-  layer->in_padded = calloc(layer->padded_size, sizeof(float));
-
-#pragma acc enter data copyin(layer[0:1])
-#pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
-#pragma acc enter data copyin(layer->in_padded[0:layer->padded_size])
+  #pragma acc enter data copyin(layer[0:1])
+  #pragma acc enter data create(layer->weights[0:layer->weights_size],layer->bias[0:M])
 
   return layer;
 }
@@ -45,44 +38,22 @@ Conv_Layer* make_conv_layer(int W, int H, int D, int K, int M, int S, int P) {
 // Frees memory allocated for a convolutional layer.
 // l: Pointer to the convolutional layer to be freed.
 void free_conv(Conv_Layer* l) {
-
-#pragma acc exit data delete(l->in_padded[0:l->padded_size])
 #pragma acc exit data delete(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
 #pragma acc exit data delete(l[0:1])
-
-  free(l->in_padded);
   free(l->bias);
   free(l->weights);
   free(l);
 }
 
-// Add zero-padding to input data of conv_layer l
-void pad_input(float* restrict X, Conv_Layer* l) {
-
-#pragma acc parallel loop present(X,l) gang vector_length(128)
-  for ( int c = 0; c < l->in_depth; c++) {
-    #pragma acc loop vector collapse(2)
-    for (int j = 0; j < l->in_height; j++) {
-      for (int i = 0; i < l->in_width; i++) {
-        int padded_idx = (j + l->padding) * l->padded_width + (i + l->padding) + c * l->padded_height * l->padded_width;
-        int in_idx = j * l->in_width + i + c * l->in_height * l->in_width;
-        l->in_padded[padded_idx] = X[in_idx];
-      }
-    }
-  }
-}
-
-
 // Performs the forward pass for a convolutional layer.
 // X: Input data, l: Convolutional layer, Y: Output data
-void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y){
-
+void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
+  
   int in_size = l->in_width*l->in_height*l->in_depth;
-#pragma acc data copyin(X[0:in_size]) present(l) copyout(Y[0:l->out_size])
+    // For each output feature map
+  #pragma acc data copyin(X[0:in_size]) present(l) copyout(Y[0:l->out_size])
 {
-    pad_input(X, l); //Create input with zero-padding
-   // For each output feature map
-#pragma acc parallel loop gang collapse(3) vector_length(32)
+  #pragma acc parallel loop gang collapse(3) vector_length(32)
     for ( int m = 0; m < l->out_depth; m++) {
       for (int j = 0; j < l->out_height; j++) {
         for (int i = 0; i < l->out_width; i++) {
@@ -94,10 +65,13 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y){
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
                 int f_idx = f_i + (f_j * l->filter_width) + (c + m * l->in_depth) * (l->filter_width * l->filter_width); 
-                int x_j = j * l->stride + f_j; 
-                int x_i = i * l->stride + f_i; 
-                int x_idx = c * l->padded_height * l->padded_width + x_j * l->padded_width + x_i; 
-                sum += l->weights[f_idx] * l->in_padded[x_idx];
+                int x_j = -l->padding + j * l->stride + f_j; 
+                int x_i = -l->padding + i * l->stride + f_i; 
+                // If in range of image, else zero
+                if (x_j >= 0 && x_i >= 0 && x_j < l->in_height && x_i < l->in_width) {
+                  int x_idx = c * l->in_height * l->in_width + x_j * l->in_width + x_i; 
+                  sum += l->weights[f_idx] * X[x_idx];
+                } // if
               } // for f_i
             } // for f_j
           } // for c
@@ -106,7 +80,7 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y){
         } // for i
       } // for j
     } // for m
-  }//acc data
+}//acc data
 }
 
 // Creates a ReLU activation layer.
@@ -141,6 +115,7 @@ void relu_forward(float* restrict X, ReLU_Layer* l, float* restrict Y) {
 // Frees memory allocated for a ReLU activation layer.
 // l: Pointer to the ReLU layer to be freed.
 void free_relu(ReLU_Layer* l) {
+
   free(l);
 }
 
@@ -245,7 +220,6 @@ void fc_forward(float* restrict X, FC_Layer* l, float* restrict Y) {
 // Frees memory allocated for a fully connected layer.
 // l: Pointer to the fully connected layer to be freed.
 void free_fc(FC_Layer* l) {
-  
   free(l->bias);
   free(l->weights);
   free(l);
@@ -294,9 +268,7 @@ int load_conv(Conv_Layer* l, char* file_name) {
   }
 
   fclose(fin);
-
-  #pragma acc update device(l->weights[0:l->weights_size],l->bias[0:l->out_depth])
-  
+  #pragma acc update device (l->weights[0:l->weights_size],l->bias[0:l->out_depth])
   return 0;
 }
 
@@ -377,14 +349,14 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   float max = -INFINITY;
   float total = 0.0f;
   
-    // Compute max activation
+  // Compute max activation
   for (int i = 0; i < l->out_depth; i++) {
     if (X[i] > max) {
       max = X[i];
     }
   }
 
-  // Compute exponentials and total 
+  // Compute exponentials and total
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
@@ -401,6 +373,7 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
 // Frees memory allocated for a softmax layer.
 // l: Pointer to the softmax layer to be freed.
 void free_softmax(Softmax_Layer* l) {
+
   free(l->likelihoods);
   free(l);
 }

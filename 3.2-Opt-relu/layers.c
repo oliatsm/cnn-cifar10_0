@@ -396,7 +396,6 @@ void softmax_forward(float* restrict X, Softmax_Layer* l, float* restrict Y) {
   }
 
   // Compute exponentials and total
-  
   for (int i = 0; i < l->out_depth; i++) {
     float e = exp(X[i] - max);
     total += e;
