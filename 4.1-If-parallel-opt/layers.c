@@ -53,16 +53,14 @@ void conv_forward(float* restrict X, Conv_Layer* l, float* restrict Y) {
     // For each output feature map
   #pragma acc data copyin(X[0:in_size]) present(l) copyout(Y[0:l->out_size])
 {
-  #pragma acc parallel loop gang //collapse(3) vector_length(32)
+  #pragma acc parallel loop gang collapse(3) vector_length(32)
     for ( int m = 0; m < l->out_depth; m++) {
-      #pragma acc loop
       for (int j = 0; j < l->out_height; j++) {
-        #pragma acc loop
         for (int i = 0; i < l->out_width; i++) {
           int y_idx = i + (l->out_width * (j + m * l->out_height)); 
           // Calculate dot product of Weights*Input
           float sum = 0.0f;
-        #pragma acc loop reduction(+:sum) //vector
+        #pragma acc loop reduction(+:sum) vector
           for (int c = 0; c < l->in_depth; c++) {
             for (int f_j = 0; f_j < l->filter_width; f_j++) {
               for (int f_i = 0; f_i < l->filter_width; f_i++) {
